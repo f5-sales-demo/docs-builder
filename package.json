@@ -11,7 +11,7 @@
   "dependencies": {
     "@astrojs/react": "^6.0.1",
     "@astrojs/starlight": "^0.41.3",
-    "@f5-sales-demo/docs-theme": "^3.9.3",
+    "@f5-sales-demo/docs-theme": "^3.9.4",
     "@f5-sales-demo/icons-aws": "*",
     "@f5-sales-demo/icons-azure": "*",
     "@f5-sales-demo/icons-carbon": "*",
@@ -43,7 +43,7 @@
     "sharp": "^0.35.3",
     "@f5-sales-demo/starlight-llms-txt": "^1.3.1",
     "unist-util-visit": "^5.1.0",
-    "unocss": "^66.7.4"
+    "unocss": "^66.7.5"
   },
   "overrides": {
     "dompurify": "^3.4.0",
