@@ -31,6 +31,12 @@ COPY . .
 RUN cp node_modules/@f5-sales-demo/docs-theme/astro.config.mjs /app/astro.config.mjs && \
     cp node_modules/@f5-sales-demo/docs-theme/src/content.config.ts /app/src/content.config.ts
 
+# Provide the default site favicon from the theme's logo. Starlight references
+# /favicon.svg; publicDir assets are served at /<base>/favicon.svg. Without this
+# every site's <link rel="icon" href="/<base>/favicon.svg"> 404s.
+RUN mkdir -p /app/public && \
+    cp node_modules/@f5-sales-demo/docs-theme/assets/f5-logo.svg /app/public/favicon.svg
+
 # Remove placeholder content
 RUN rm -rf src/content/docs/*
 
