@@ -165,6 +165,40 @@ apply what fits.
 - Never commit broken or experimental code, or speculative work that is not needed
   (YAGNI). Keep merged history green.
 
+#### After merge: clean up local branches
+
+- The server deletes the remote branch on merge (`delete_branch_on_merge`); the local
+  copy remains and must be cleaned up, or merged branches accumulate on the workstation.
+- Once your PR is merged and CI is green, return to `main` and prune:
+  `git checkout main && git pull && git fetch --prune`.
+- Pruning marks any branch whose upstream was deleted as `[gone]`. Squash-merges mean a
+  merged branch is not an ancestor of `main` (so `git branch --merged` misses it) and
+  `git branch -d` refuses it — removing it requires the force flag, `git branch -D`.
+- `[gone]` means only "the remote branch is gone." That is usually a merge, but it is
+  also true for a PR closed without merging or a manually deleted remote — in which case
+  the local branch still holds unmerged commits. So confirm the work actually merged
+  before force-deleting; never blind-pipe the `[gone]` list into `git branch -D`.
+- Use this manual, confirm-then-delete flow: list the `[gone]` branches, confirm each
+  one's PR actually merged, then delete only the confirmed ones. (A `/clean_gone` skill
+  exists, but it force-deletes every `[gone]` branch with no merge check — the exact
+  closed-unmerged hazard above — so do not treat it as safe.)
+
+  ```bash
+  # 1) list branches whose upstream is gone (literal "[gone]" via %(upstream:track);
+  #    do NOT grep `git branch -vv`, which renders it as "[origin/<branch>: gone]")
+  git for-each-ref --format '%(refname:short) %(upstream:track)' refs/heads \
+    | awk '$2 == "[gone]" {print $1}'
+  # 2) confirm the branch actually merged — check the returned PR is the right one,
+  #    since --head matches by name and branch names can be reused
+  gh pr list --state merged --head <branch>
+  # 3) delete the confirmed-merged branch (force flag is required, see above)
+  git branch -D <branch>
+  ```
+
+- Safety: a `[gone]` branch may still hold unmerged commits, so never `git branch -D` one
+  whose PR you have not confirmed merged, and never delete a branch with uncommitted
+  changes. When unsure, keep the branch and surface it for a human.
+
 ### Local checks vs CI
 
 - The authoritative lint gate is CI's `Lint Code Base` (Super-Linter). It runs more
