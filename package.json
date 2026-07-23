@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "@astrojs/react": "^6.0.1",
-    "@astrojs/starlight": "^0.41.3",
+    "@astrojs/starlight": "^0.41.4",
     "@f5-sales-demo/docs-theme": "^3.9.14",
     "@f5-sales-demo/icons-aws": "*",
     "@f5-sales-demo/icons-azure": "*",
@@ -31,7 +31,7 @@
     "@iconify-json/ph": "^1.2.2",
     "@iconify-json/simple-icons": "^1",
     "@iconify-json/tabler": "^1.2.37",
-    "@lucide/astro": "^1.25.0",
+    "@lucide/astro": "^1.26.0",
     "@astrojs/markdown-remark": ">=7.2.1",
     "@scalar/api-reference-react": "^0.9.59",
     "starlight-openapi": "^0.26.0",
