@@ -21,7 +21,6 @@
 
 Containerized Astro + Starlight documentation build system
 
-
 ## Documentation
 
 Full documentation is available at **[https://f5-sales-demo.github.io/docs-builder/](https://f5-sales-demo.github.io/docs-builder/)**.
