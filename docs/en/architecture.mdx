@@ -13,7 +13,7 @@ The docs builder is a containerized [Astro](https://astro.build/) + [Starlight](
 
 Content repos keep their documentation in a `docs/` directory. At build time the container copies those files into `src/content/docs/`, where Astro's content collection picks them up.
 
-```
+```text
 content-repo/
   docs/           ← authored by content teams
     index.mdx
@@ -49,7 +49,7 @@ This keeps configuration centralized — content repos and the builder itself do
 
 ## Source Directory Layout
 
-```
+```text
 src/
   components/
     PlaceholderForm.tsx          # React form for editing placeholder values
@@ -100,7 +100,7 @@ flowchart LR
 ## Build-Time vs Client-Time Processing
 
 | Concern | When | How |
-|---------|------|-----|
+| --- | --- | --- |
 | MDX → HTML | Build time | Astro compiler |
 | Mermaid code blocks → container divs | Build time | `remark-mermaid.mjs` plugin (from `docs-theme`) |
 | Placeholder tokens → interactive spans | Client time | `placeholder-dom.ts` TreeWalker |

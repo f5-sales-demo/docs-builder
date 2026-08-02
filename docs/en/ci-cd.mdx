@@ -10,7 +10,7 @@ The repository uses four GitHub Actions workflows and a centralized template sys
 ## Workflows
 
 | Workflow | File | Trigger | Purpose |
-|----------|------|---------|---------|
+| --- | --- | --- | --- |
 | GitHub Pages Deploy | `github-pages-deploy.yml` | Push to `main` (`docs/**`), manual dispatch | Builds and deploys the documentation site to GitHub Pages |
 | Build and Publish Docker Image | `build-image.yml` | Push to `main` (`docker/**`, `package*.json`), daily cron, `repository_dispatch` | Builds the Docker image, pushes to GHCR, and dispatches rebuilds to downstream repos |
 | Require Linked Issue | `require-linked-issue.yml` | Pull request events | Blocks PRs that do not reference a GitHub issue |
@@ -56,6 +56,7 @@ on:
 ```
 
 Steps:
+
 1. Checkout code
 2. Log in to `ghcr.io` using `docker/login-action`
 3. Build and push using `docker/build-push-action` with context `.` and file `docker/Dockerfile`
@@ -136,6 +137,6 @@ The enforce-repo-settings workflow applies branch protection rules from the temp
 ## Secrets
 
 | Secret | Source | Purpose |
-|--------|--------|---------|
+| --- | --- | --- |
 | `GITHUB_TOKEN` | Automatic (GitHub) | Used by most workflows for checkout, package publishing, and API calls |
 | `REPO_ADMIN_TOKEN` | Manual (repository secret) | Required by enforce-repo-settings and the dispatch job to modify branch protection, repo settings, and trigger downstream workflows (needs admin scope) |
