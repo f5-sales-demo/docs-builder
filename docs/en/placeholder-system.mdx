@@ -11,7 +11,7 @@ The placeholder system lets readers customize IP addresses, ASNs, and other depl
 
 Tokens follow the regex pattern:
 
-```
+```text
 x([A-Z][A-Z0-9_]+)x
 ```
 
@@ -38,7 +38,7 @@ All placeholders are declared in `src/data/placeholders.json`. Each entry has th
 ```
 
 | Field | Required | Description |
-|-------|----------|-------------|
+| --- | --- | --- |
 | `type` | yes | `"text"` for free-form input, `"dropdown"` for select menus |
 | `default` | yes | Initial value shown before the reader changes anything |
 | `description` | yes | Label displayed in the form |
@@ -53,7 +53,7 @@ All placeholders are declared in `src/data/placeholders.json`. Each entry has th
 Values are persisted in `localStorage` under the key `f5xc-placeholders`. The store exposes four functions:
 
 | Function | Purpose |
-|----------|---------|
+| --- | --- |
 | `getDefaults()` | Returns a map of every placeholder key to its `default` value from JSON |
 | `loadValues()` | Reads from localStorage, falls back to `getDefaults()` |
 | `saveValues(values)` | Writes the current map to localStorage |
@@ -87,7 +87,7 @@ const cidrToMask: Record<string, string> = {
 Two computed placeholders are produced:
 
 | Computed Key | Derived From | Example |
-|-------------|-------------|---------|
+| --- | --- | --- |
 | `PROTECTED_MASK_V4` | `PROTECTED_CIDR_V4` via `cidrToMask` lookup | `255.255.255.0` |
 | `PROTECTED_PREFIX_V4` | `PROTECTED_NET_V4` + `PROTECTED_CIDR_V4` via `cidrToShort` | `192.0.2.0/24` |
 
@@ -169,13 +169,14 @@ This avoids re-walking the tree — it directly updates the span text content.
 The script registers two listeners:
 
 | Event | Handler | Purpose |
-|-------|---------|---------|
+| --- | --- | --- |
 | `placeholder-change` | `handleChange` | Updates spans and re-renders Mermaid diagrams |
 | `astro:page-load` | `init` | Re-walks the DOM after Astro client-side navigation |
 
 ## How To: Add a New Placeholder
 
 1. **Add the JSON entry** in `src/data/placeholders.json`:
+
    ```json
    "MY_NEW_VALUE": {
      "type": "text",
@@ -195,6 +196,7 @@ Computed values are derived from other placeholders. To add one:
 1. Add a lookup table (if needed) in `src/lib/placeholder-store.ts`, following the pattern of `cidrToMask`.
 
 2. Extend `getComputedValues()` to include the new derived key:
+
    ```ts
    export function getComputedValues(values: Record<string, string>): Record<string, string> {
      // ... existing logic

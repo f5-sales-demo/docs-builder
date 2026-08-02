@@ -33,7 +33,7 @@ visit(tree, 'code', (node, index, parent) => {
 Key details:
 
 | Aspect | Value |
-|--------|-------|
+| --- | --- |
 | Node type matched | `code` nodes where `lang === 'mermaid'` |
 | HTML entity escaping | `&`, `<`, `>`, `"` — prevents attribute injection in `data-mermaid-src` |
 | Output structure | `<div class="mermaid-container">` with `data-mermaid-src` attribute holding the escaped source |
@@ -109,7 +109,7 @@ This makes authoring errors visible without breaking the rest of the page.
 Diagrams re-render in two situations:
 
 | Trigger | Event | What happens |
-|---------|-------|-------------|
+| --- | --- | --- |
 | Placeholder value changes | `placeholder-change` | `handleChange()` calls `renderMermaidDiagrams()` with new values |
 | Astro page navigation | `astro:page-load` | `init()` calls `renderMermaidDiagrams()` for the new page |
 

@@ -34,7 +34,7 @@ ENTRYPOINT ["/entrypoint.sh"]
 ### Layer Strategy
 
 | Layer | What | Why cached separately |
-|-------|------|----------------------|
+| --- | --- | --- |
 | 1 | `COPY package*.json` + `npm ci` | Dependencies change infrequently; caching this layer avoids re-downloading on every build |
 | 2 | `COPY . .` | Framework source code |
 | 3 | `rm -rf src/content/docs/*` | Cleans out any placeholder content so only injected content appears |
@@ -118,7 +118,7 @@ Copies the built site to the output mount point.
 ## Environment Variables
 
 | Variable | Default | Description |
-|----------|---------|-------------|
+| --- | --- | --- |
 | `CONTENT_DIR` | `/content/docs` | Path to the mounted content directory |
 | `OUTPUT_DIR` | `/output` | Path where the built site is copied |
 | `DOCS_TITLE` | *(extracted from index.mdx)* | Site title passed to the Astro config |
@@ -172,14 +172,14 @@ Open `http://localhost:4321`. Hot module replacement (HMR) works for component a
 
 The image is published to GitHub Container Registry:
 
-```
+```text
 ghcr.io/f5-sales-demo/docs-builder
 ```
 
 Two tags are pushed on every build:
 
 | Tag | Description |
-|-----|-------------|
+| --- | --- |
 | `latest` | Most recent build from `main` |
 | `<sha>` | Full Git commit SHA for reproducible builds |
 
