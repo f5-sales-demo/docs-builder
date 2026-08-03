@@ -44,6 +44,6 @@ COPY docker/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh && \
     chown -R node:node /app /entrypoint.sh
 
-USER node
+USER 1000:1000
 
 ENTRYPOINT ["/entrypoint.sh"]
