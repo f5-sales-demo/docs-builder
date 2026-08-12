@@ -23,7 +23,7 @@ concurrency:
 jobs:
   build:
     name: Build and publish multi-architecture image
-    runs-on: [self-hosted, Linux, X64, docs-builder]
+    runs-on: [self-hosted, Linux, X64, docs-builder, ubuntu-24.04]
     permissions:
       contents: read
       packages: write # publish immutable and latest image tags to GHCR
@@ -82,7 +82,7 @@ jobs:
   dispatch:
     name: Trigger downstream Pages rebuilds
     needs: build
-    runs-on: [self-hosted, Linux, X64, docs-builder]
+    runs-on: [self-hosted, Linux, X64, docs-builder, ubuntu-24.04]
     environment: release
     permissions: {}
     steps:
