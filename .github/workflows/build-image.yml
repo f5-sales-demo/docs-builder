@@ -96,7 +96,7 @@ jobs:
           echo "Fetching docs-sites.json from ${CONFIG_REPO}..."
           SITES=$(gh api "repos/${CONFIG_REPO}/contents/${CONFIG_PATH}" --jq '.content' | base64 -d)
 
-          echo "$SITES" | jq -r '.[].url' | while read -r url; do
+          echo "$SITES" | jq -r '.[] | select(.rebuild_dispatch != false) | .url' | while read -r url; do
             temp="${url#https://}"
             org="${temp%%.*}"
             path="${temp#*/}"

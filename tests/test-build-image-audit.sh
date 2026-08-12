@@ -36,6 +36,14 @@ if build_job.get("permissions") != {"contents": "read", "packages": "write"}:
     raise SystemExit("image build permissions must remain least-privilege")
 if dispatch_job.get("environment") != "release" or dispatch_job.get("permissions") != {}:
     raise SystemExit("downstream dispatch must use the release environment with no GitHub token permissions")
+dispatch_step = next(
+    step for step in dispatch_job["steps"] if step.get("name") == "Dispatch to docs-sites repos"
+)
+dispatch_filter = "jq -r '.[] | select(.rebuild_dispatch != false) | .url'"
+if dispatch_filter not in dispatch_step.get("run", ""):
+    raise SystemExit(
+        "downstream dispatch must exclude sites that explicitly disable generic rebuilds"
+    )
 resolve_index = names.index("Resolve latest docs-theme")
 audit_index = names.index("Audit production dependencies")
 image_index = names.index("Build and push with retry")
