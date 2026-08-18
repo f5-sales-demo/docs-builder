@@ -1,18 +1,7 @@
 ---
 name: Build and Publish Docker Image
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'docker/**'
-      - 'src/**'
-      - 'package.json'
-      - 'package-lock.json'
-      - 'tsconfig.json'
-  schedule:
-    - cron: '0 6 * * *'
-  repository_dispatch:
-    types: [rebuild-image]
+  workflow_dispatch:
 
 permissions: {}
 
@@ -23,7 +12,7 @@ concurrency:
 jobs:
   build:
     name: Build and publish multi-architecture image
-    runs-on: [self-hosted, Linux, X64, docs-builder, ubuntu-24.04]
+    runs-on: [self-hosted, Linux, X64, docs-builder, container-build]
     permissions:
       contents: read
       packages: write # publish immutable and latest image tags to GHCR
