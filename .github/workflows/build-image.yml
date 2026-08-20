@@ -20,18 +20,16 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - name: Setup Node.js
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
-        with:
-          node-version: 'lts/*'
+      # The trusted container-build runner provides the catalogued Node.js 22.23.2
+      # toolchain. Do not download a floating runtime during a release build.
       - name: Resolve latest docs-theme
         run: npm update @f5-sales-demo/docs-theme --package-lock-only --legacy-peer-deps
       - name: Audit production dependencies
         run: npm audit --omit=dev --audit-level=high
       - name: Lowercase image name
         run: echo "IMAGE_NAME=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_ENV"
-      - uses: docker/setup-qemu-action@96fe6ef7f33517b61c61be40b68a1882f3264fb8 # v4.2.0
-      - uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4.2.0
+      # The trusted host has binfmt registrations and Docker Buildx. These are
+      # deliberately host capabilities rather than privileged per-job setup.
       - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
         with:
           registry: ghcr.io
