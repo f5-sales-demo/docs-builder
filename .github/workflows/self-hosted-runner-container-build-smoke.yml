@@ -1,0 +1,40 @@
+---
+name: Self-hosted Runner Container-build Smoke
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: self-hosted-runner-container-build-smoke-${{ github.repository }}
+  cancel-in-progress: false
+
+jobs:
+  docker-socket-smoke:
+    name: Validate trusted Docker client route
+    runs-on: [self-hosted, Linux, X64, docs-builder, container-build]
+    timeout-minutes: 10
+    steps:
+      - name: Assert the trusted container-build boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "${RUNNER_CONTAINER_TOOLS:-}" = 1
+          test "${DOCKER_HOST:-}" = "unix:///run/docker.sock"
+          test -S /run/docker.sock
+          if touch /.self-hosted-runner-container-build-smoke; then
+            rm -f /.self-hosted-runner-container-build-smoke
+            echo "the runner root filesystem must be read-only" >&2
+            exit 1
+          fi
+
+      - name: Verify Docker client, Buildx, Compose, and the mounted host socket
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker version --format "{{.Client.Version}}"
+          docker buildx version
+          docker compose version
+          docker version --format "{{.Server.Version}}"
