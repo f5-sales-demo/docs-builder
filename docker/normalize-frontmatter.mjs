@@ -88,7 +88,7 @@ function normalize(text) {
   }
 
   // No body H1. Only act if a lone `page_title` needs renaming to `title`.
-  if (fm && fm.some((l) => /^page_title:/.test(l)) && !fm.some((l) => /^title:/.test(l))) {
+  if (fm?.some((l) => /^page_title:/.test(l)) && !fm.some((l) => /^title:/.test(l))) {
     const newFm = fm.map((l) => l.replace(/^page_title:/, 'title:'));
     const out = ['---', ...newFm, '---', ...body].join('\n');
     return trailingNewline ? `${out}\n` : out;
