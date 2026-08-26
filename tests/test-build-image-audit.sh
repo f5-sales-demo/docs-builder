@@ -5,11 +5,13 @@ REPO_ROOT=$(cd "$(dirname "$0")/.." && pwd)
 WORKFLOW="$REPO_ROOT/.github/workflows/build-image.yml"
 PAGES_WORKFLOW="$REPO_ROOT/.github/workflows/github-pages-deploy.yml"
 LINTER_WORKFLOW="$REPO_ROOT/.github/workflows/super-linter.yml"
+CONTAINER_SMOKE="$REPO_ROOT/.github/workflows/self-hosted-runner-container-build-smoke.yml"
+TOOL_CACHE_SMOKE="$REPO_ROOT/.github/workflows/self-hosted-runner-python-uv-smoke.yml"
 DOCKERFILE="$REPO_ROOT/docker/Dockerfile"
 PACKAGE_JSON="$REPO_ROOT/package.json"
 PACKAGE_LOCK="$REPO_ROOT/package-lock.json"
 
-python3 - "$WORKFLOW" "$PAGES_WORKFLOW" "$LINTER_WORKFLOW" "$DOCKERFILE" "$PACKAGE_JSON" "$PACKAGE_LOCK" <<'PY'
+python3 - "$WORKFLOW" "$PAGES_WORKFLOW" "$LINTER_WORKFLOW" "$CONTAINER_SMOKE" "$TOOL_CACHE_SMOKE" "$DOCKERFILE" "$PACKAGE_JSON" "$PACKAGE_LOCK" <<'PY'
 import json
 import re
 import sys
@@ -22,11 +24,15 @@ with open(sys.argv[2], encoding="utf-8") as pages_file:
     pages = yaml.safe_load(pages_file)
 with open(sys.argv[3], encoding="utf-8") as linter_file:
     linter = yaml.safe_load(linter_file)
-with open(sys.argv[4], encoding="utf-8") as dockerfile:
+with open(sys.argv[4], encoding="utf-8") as container_smoke_file:
+    container_smoke = yaml.safe_load(container_smoke_file)
+with open(sys.argv[5], encoding="utf-8") as tool_cache_smoke_file:
+    tool_cache_smoke = yaml.safe_load(tool_cache_smoke_file)
+with open(sys.argv[6], encoding="utf-8") as dockerfile:
     dockerfile_text = dockerfile.read()
-with open(sys.argv[5], encoding="utf-8") as package_file:
+with open(sys.argv[7], encoding="utf-8") as package_file:
     package = json.load(package_file)
-with open(sys.argv[6], encoding="utf-8") as lock_file:
+with open(sys.argv[8], encoding="utf-8") as lock_file:
     package_lock = json.load(lock_file)
 
 build_job = workflow["jobs"]["build"]
@@ -117,6 +123,37 @@ for caller, label in ((pages, "docs"), (linter, "lint")):
     if inputs.get("container_build_runner_label") != "docs-container-build":
         raise SystemExit("reusable caller must pass docs-container-build")
 
+container_job = container_smoke["jobs"]["docker-socket-smoke"]
+if container_job.get("runs-on") != "docs-container-build":
+    raise SystemExit("container smoke must use the repository-scoped container ARC label")
+container_boundary = container_job["steps"][0]["run"]
+for required in (
+    'test "${DOCKER_HOST:-}" = "unix:///var/run/docker.sock"',
+    "test -S /var/run/docker.sock",
+    "docker info --format '{{.Name}}'",
+    "if pgrep -x dockerd; then",
+):
+    if required not in container_boundary:
+        raise SystemExit(f"container smoke is missing ARC boundary check: {required}")
+if "RUNNER_CONTAINER_TOOLS" in container_boundary or "unix:///run/docker.sock" in container_boundary:
+    raise SystemExit("container smoke must not restore legacy host-socket assertions")
+
+tool_job = tool_cache_smoke["jobs"]["tool-cache-smoke"]
+if tool_job.get("runs-on") != "docs-socketless":
+    raise SystemExit("tool smoke must use the repository-scoped socketless ARC label")
+tool_boundary = tool_job["steps"][0]["run"]
+for required in (
+    "AGENT_TOOLSDIRECTORY must be set",
+    'test "$catalog_dir" = /opt/hostedtoolcache',
+    'test "$tool_cache" = "$catalog_dir"',
+    "/opt/python-3.13.7",
+    "/usr/local/bin/uv",
+):
+    if required not in tool_boundary:
+        raise SystemExit(f"tool smoke is missing ARC image-catalog check: {required}")
+if "RUNNER_RUNTIME_DIR" in tool_boundary:
+    raise SystemExit("tool smoke must not restore the legacy copied-runtime assertion")
+
 if package.get("overrides", {}).get("js-yaml") != "^4.3.1":
     raise SystemExit("production dependency graph must override js-yaml to the patched 4.3.1 line")
 resolved_js_yaml = package_lock["packages"]["node_modules/js-yaml"]["version"]
@@ -128,4 +165,4 @@ if re.findall(r"(?m)^USER[ \\t]+(.+)$", dockerfile_text) != ["1000:1000"]:
     raise SystemExit("runtime container user must use the numeric node UID and GID")
 PY
 
-echo "[OK] ARC image publication, cache, manifest, digest smoke, and fanout contracts pass"
+echo "[OK] ARC publication, cache, manifest, image-catalog, DinD, digest, and fanout contracts pass"

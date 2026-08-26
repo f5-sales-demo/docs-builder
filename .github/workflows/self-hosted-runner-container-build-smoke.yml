@@ -21,16 +21,20 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "${RUNNER_CONTAINER_TOOLS:-}" = 1
-          test "${DOCKER_HOST:-}" = "unix:///run/docker.sock"
-          test -S /run/docker.sock
+          test "${DOCKER_HOST:-}" = "unix:///var/run/docker.sock"
+          test -S /var/run/docker.sock
+          test "$(docker info --format '{{.Name}}')" = "$HOSTNAME"
+          if pgrep -x dockerd; then
+            echo "dockerd must run only in the pod sidecar" >&2
+            exit 1
+          fi
           if touch /.self-hosted-runner-container-build-smoke; then
             rm -f /.self-hosted-runner-container-build-smoke
-            echo "the runner root filesystem must be read-only" >&2
+            echo "the filesystem root must not be writable by the runner" >&2
             exit 1
           fi
 
-      - name: Verify Docker client, Buildx, Compose, and the mounted host socket
+      - name: Verify Docker client, Buildx, Compose, and the pod-local daemon
         shell: bash
         run: |
           set -euo pipefail
