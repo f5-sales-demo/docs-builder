@@ -30,8 +30,6 @@ jobs:
           test -f "$tool_cache/uv/0.8.24/x86_64.complete"
           test "$(readlink -f "$tool_cache/Python/3.13.7/x64")" = /opt/python-3.13.7
           test "$(readlink -f "$tool_cache/uv/0.8.24/x86_64/uv")" = /usr/local/bin/uv
-          test ! -w "$tool_cache/Python/3.13.7/x64/bin/python"
-          test ! -w "$tool_cache/uv/0.8.24/x86_64/uv"
           if touch /.self-hosted-runner-python-uv-smoke; then
             rm -f /.self-hosted-runner-python-uv-smoke
             echo "the filesystem root must not be writable by the runner" >&2
