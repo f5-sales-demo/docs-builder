@@ -14,7 +14,7 @@ concurrency:
 jobs:
   docker-socket-smoke:
     name: Validate trusted Docker client route
-    runs-on: [self-hosted, Linux, X64, docs-builder, container-build]
+    runs-on: docs-container-build
     timeout-minutes: 10
     steps:
       - name: Assert the trusted container-build boundary

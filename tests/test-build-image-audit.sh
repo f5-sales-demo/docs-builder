@@ -3,11 +3,13 @@ set -euo pipefail
 
 REPO_ROOT=$(cd "$(dirname "$0")/.." && pwd)
 WORKFLOW="$REPO_ROOT/.github/workflows/build-image.yml"
+PAGES_WORKFLOW="$REPO_ROOT/.github/workflows/github-pages-deploy.yml"
+LINTER_WORKFLOW="$REPO_ROOT/.github/workflows/super-linter.yml"
 DOCKERFILE="$REPO_ROOT/docker/Dockerfile"
 PACKAGE_JSON="$REPO_ROOT/package.json"
 PACKAGE_LOCK="$REPO_ROOT/package-lock.json"
 
-python3 - "$WORKFLOW" "$DOCKERFILE" "$PACKAGE_JSON" "$PACKAGE_LOCK" <<'PY'
+python3 - "$WORKFLOW" "$PAGES_WORKFLOW" "$LINTER_WORKFLOW" "$DOCKERFILE" "$PACKAGE_JSON" "$PACKAGE_LOCK" <<'PY'
 import json
 import re
 import sys
@@ -16,11 +18,15 @@ import yaml
 
 with open(sys.argv[1], encoding="utf-8") as workflow_file:
     workflow = yaml.safe_load(workflow_file)
-with open(sys.argv[2], encoding="utf-8") as dockerfile:
+with open(sys.argv[2], encoding="utf-8") as pages_file:
+    pages = yaml.safe_load(pages_file)
+with open(sys.argv[3], encoding="utf-8") as linter_file:
+    linter = yaml.safe_load(linter_file)
+with open(sys.argv[4], encoding="utf-8") as dockerfile:
     dockerfile_text = dockerfile.read()
-with open(sys.argv[3], encoding="utf-8") as package_file:
+with open(sys.argv[5], encoding="utf-8") as package_file:
     package = json.load(package_file)
-with open(sys.argv[4], encoding="utf-8") as lock_file:
+with open(sys.argv[6], encoding="utf-8") as lock_file:
     package_lock = json.load(lock_file)
 
 build_job = workflow["jobs"]["build"]
@@ -30,73 +36,96 @@ names = [step.get("name") for step in steps]
 
 if workflow.get("permissions") != {}:
     raise SystemExit("workflow must deny default GitHub token permissions")
-if build_job.get("name") != "Build and publish multi-architecture image":
-    raise SystemExit("image build job must have an explicit display name")
+if build_job.get("runs-on") != "docs-container-build":
+    raise SystemExit("image work must use the repository-scoped container ARC label")
+if dispatch_job.get("runs-on") != "docs-socketless":
+    raise SystemExit("downstream dispatch must use the repository-scoped socketless ARC label")
 if build_job.get("permissions") != {"contents": "read", "packages": "write"}:
     raise SystemExit("image build permissions must remain least-privilege")
 if dispatch_job.get("environment") != "release" or dispatch_job.get("permissions") != {}:
-    raise SystemExit("downstream dispatch must use the release environment with no GitHub token permissions")
-dispatch_step = next(
-    step for step in dispatch_job["steps"] if step.get("name") == "Dispatch to docs-sites repos"
-)
-dispatch_filter = "jq -r '.[] | select(.rebuild_dispatch != false) | .url'"
-if dispatch_filter not in dispatch_step.get("run", ""):
-    raise SystemExit(
-        "downstream dispatch must exclude sites that explicitly disable generic rebuilds"
-    )
-resolve_index = names.index("Resolve latest docs-theme")
-audit_index = names.index("Audit production dependencies")
-image_index = names.index("Build and push with retry")
+    raise SystemExit("downstream dispatch must retain the release environment and no token permissions")
+if dispatch_job.get("if") != "github.ref == 'refs/heads/main' && github.ref_protected && inputs.dispatch_downstream":
+    raise SystemExit("downstream fanout must require protected main and explicit opt-in")
+
+inputs = workflow[True]["workflow_dispatch"]["inputs"]
+if inputs.get("dispatch_downstream") != {
+    "description": "Trigger Pages rebuilds after a protected-main publication",
+    "required": False,
+    "type": "boolean",
+    "default": False,
+}:
+    raise SystemExit("dispatch_downstream must be an opt-in boolean defaulting false")
 
 action_steps = [step for step in steps if "uses" in step]
 if not all(re.fullmatch(r"[^@]+@[0-9a-f]{40}", step["uses"]) for step in action_steps):
     raise SystemExit("image build actions must be pinned to full commit SHAs")
+required_actions = {
+    "docker/setup-qemu-action@96fe6ef7f33517b61c61be40b68a1882f3264fb8",
+    "docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e",
+}
+if not required_actions <= {step["uses"] for step in action_steps}:
+    raise SystemExit("pinned QEMU and Buildx setup actions are required")
 
-checkout_step = next(
-    step for step in steps if step.get("uses", "").startswith("actions/checkout@")
-)
+checkout_step = next(step for step in steps if step.get("uses", "").startswith("actions/checkout@"))
 if checkout_step.get("with", {}).get("persist-credentials") is not False:
     raise SystemExit("image build checkout must not persist GitHub credentials")
 
+resolve_index = names.index("Resolve latest docs-theme")
+audit_index = names.index("Audit production dependencies")
+publish_index = names.index("Publish protected-main multi-architecture image and cache")
+if not resolve_index < audit_index < publish_index:
+    raise SystemExit("production audit must run before image publication")
+if steps[resolve_index].get("run") != "npm update @f5-sales-demo/docs-theme --package-lock-only --legacy-peer-deps":
+    raise SystemExit("theme refresh must update only the lockfile")
+if steps[audit_index].get("run") != "npm audit --omit=dev --audit-level=high":
+    raise SystemExit("production audit must fail on high or critical advisories")
+
+publish = steps[publish_index]
+if publish.get("if") != "github.ref == 'refs/heads/main' && github.ref_protected":
+    raise SystemExit("publication must require protected main")
+publish_shell = publish["run"]
+for required in (
+    "--platform linux/amd64,linux/arm64",
+    '--tag "$IMAGE_NAME:latest"',
+    '--tag "$IMAGE_NAME:$IMAGE_SHA"',
+    '--cache-from "type=registry,ref=$CACHE_IMAGE"',
+    '--cache-to "type=registry,ref=$CACHE_IMAGE,mode=max"',
+    '--metadata-file "$metadata"',
+    "--push",
+    'echo "digest=$digest" >> "$GITHUB_OUTPUT"',
+):
+    if required not in publish_shell:
+        raise SystemExit(f"publication contract missing {required}")
+
+pilot = steps[names.index("Build and load branch pilot")]
+if pilot.get("if") != "github.ref != 'refs/heads/main'":
+    raise SystemExit("pilot build must be restricted to non-main branches")
+if "--load" not in pilot["run"] or "--push" in pilot["run"] or "--cache-to" in pilot["run"]:
+    raise SystemExit("branch pilot must load locally without publishing images or cache")
+
+verify_shell = steps[names.index("Verify published architectures")]["run"]
+if "imagetools inspect" not in verify_shell or '"linux/amd64", "linux/arm64"' not in verify_shell:
+    raise SystemExit("published manifest must be checked for both target architectures")
+smoke_shell = steps[names.index("Pull and smoke-test the published native image by digest")]["run"]
+if 'docker pull "$image"' not in smoke_shell or "docker run --rm --pull=never" not in smoke_shell:
+    raise SystemExit("published native image must be pulled by digest once and run without repulling")
+
+for caller, label in ((pages, "docs"), (linter, "lint")):
+    inputs = caller["jobs"][label]["with"]
+    if inputs.get("socketless_runner_label") != "docs-socketless":
+        raise SystemExit("reusable caller must pass docs-socketless")
+    if inputs.get("container_build_runner_label") != "docs-container-build":
+        raise SystemExit("reusable caller must pass docs-container-build")
+
 if package.get("overrides", {}).get("js-yaml") != "^4.3.1":
     raise SystemExit("production dependency graph must override js-yaml to the patched 4.3.1 line")
-
-resolve_step = steps[resolve_index]
-expected_resolve = "npm update @f5-sales-demo/docs-theme --package-lock-only --legacy-peer-deps"
-if resolve_step.get("run") != expected_resolve:
-    raise SystemExit("theme refresh must update only the lockfile through the declared dependency range")
-
-if not resolve_index < audit_index < image_index:
-    raise SystemExit("production audit must run after dependency resolution and before image publication")
-
-audit_step = steps[audit_index]
-if audit_step.get("run") != "npm audit --omit=dev --audit-level=high":
-    raise SystemExit("production audit must fail on high or critical advisories without exclusions")
-
-image_step = steps[image_index]
-expected_env = {
-    "IMAGE_NAME": "${{ env.IMAGE_NAME }}",
-    "IMAGE_SHA": "${{ github.sha }}",
-}
-if image_step.get("env") != expected_env:
-    raise SystemExit("image identifiers must enter shell through the step environment")
-if "${{" in image_step["run"] or '"$IMAGE_NAME:$IMAGE_SHA"' not in image_step["run"]:
-    raise SystemExit("image build shell must use environment variables, not direct expressions")
-
 resolved_js_yaml = package_lock["packages"]["node_modules/js-yaml"]["version"]
-resolved_parts = tuple(int(part) for part in resolved_js_yaml.split("."))
-if resolved_parts < (4, 3, 1):
+if tuple(int(part) for part in resolved_js_yaml.split(".")) < (4, 3, 1):
     raise SystemExit(f"top-level js-yaml remains vulnerable: {resolved_js_yaml}")
-
-gray_matter_js_yaml = package_lock["packages"][
-    "node_modules/gray-matter/node_modules/js-yaml"
-]["version"]
-if not gray_matter_js_yaml.startswith("3."):
+if not package_lock["packages"]["node_modules/gray-matter/node_modules/js-yaml"]["version"].startswith("3."):
     raise SystemExit("gray-matter must retain its compatible js-yaml 3.x dependency")
-
-user_directives = re.findall(r"(?m)^USER[ \\t]+(.+)$", dockerfile_text)
-if user_directives != ["1000:1000"]:
+if re.findall(r"(?m)^USER[ \\t]+(.+)$", dockerfile_text) != ["1000:1000"]:
     raise SystemExit("runtime container user must use the numeric node UID and GID")
 PY
 
-echo "[OK] Image publication fails closed and uses hardened shell and container identities"
+echo "[OK] ARC image publication, cache, manifest, digest smoke, and fanout contracts pass"
