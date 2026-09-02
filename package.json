@@ -52,7 +52,7 @@
   },
   "overrides": {
     "dompurify": "^3.4.0",
-    "basic-ftp": "^5.2.1",
+    "basic-ftp": "^6.0.0",
     "defu": "^6.1.5",
     "form-data": "^4.0.6",
     "glob": "^13.0.6",
