@@ -154,11 +154,14 @@ for required in (
 if "RUNNER_RUNTIME_DIR" in tool_boundary:
     raise SystemExit("tool smoke must not restore the legacy copied-runtime assertion")
 
-if package.get("overrides", {}).get("js-yaml") != "^4.3.1":
-    raise SystemExit("production dependency graph must override js-yaml to the patched 4.3.1 line")
+overrides = package.get("overrides", {})
+if overrides.get("js-yaml") != "^5.0.0":
+    raise SystemExit("production dependency graph must override js-yaml to the v5 line")
+if overrides.get("gray-matter", {}).get("js-yaml") != "^3.15.0":
+    raise SystemExit("gray-matter must retain its compatible js-yaml 3.x dependency")
 resolved_js_yaml = package_lock["packages"]["node_modules/js-yaml"]["version"]
-if tuple(int(part) for part in resolved_js_yaml.split(".")) < (4, 3, 1):
-    raise SystemExit(f"top-level js-yaml remains vulnerable: {resolved_js_yaml}")
+if not resolved_js_yaml.startswith("5."):
+    raise SystemExit(f"top-level js-yaml did not resolve to v5: {resolved_js_yaml}")
 if not package_lock["packages"]["node_modules/gray-matter/node_modules/js-yaml"]["version"].startswith("3."):
     raise SystemExit("gray-matter must retain its compatible js-yaml 3.x dependency")
 if re.findall(r"(?m)^USER[ \\t]+(.+)$", dockerfile_text) != ["1000:1000"]:
