@@ -22,9 +22,7 @@ ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
 
 # Install deps (cached layer)
 COPY package*.json ./
-COPY scripts/patch-starlight-js-yaml.mjs scripts/patch-starlight-js-yaml.mjs
-RUN npm ci --legacy-peer-deps && \
-    node scripts/patch-starlight-js-yaml.mjs
+RUN npm ci --legacy-peer-deps
 
 # Copy framework code
 COPY . .

@@ -155,13 +155,13 @@ if "RUNNER_RUNTIME_DIR" in tool_boundary:
     raise SystemExit("tool smoke must not restore the legacy copied-runtime assertion")
 
 overrides = package.get("overrides", {})
-if overrides.get("js-yaml") != "^5.0.0":
-    raise SystemExit("production dependency graph must override js-yaml to the v5 line")
+if "js-yaml" in overrides:
+    raise SystemExit("production dependency graph must not override Astro and Starlight's js-yaml contract")
 if overrides.get("gray-matter", {}).get("js-yaml") != "^3.15.0":
     raise SystemExit("gray-matter must retain its compatible js-yaml 3.x dependency")
-resolved_js_yaml = package_lock["packages"]["node_modules/js-yaml"]["version"]
-if not resolved_js_yaml.startswith("5."):
-    raise SystemExit(f"top-level js-yaml did not resolve to v5: {resolved_js_yaml}")
+resolved_js_yaml = package_lock["packages"]["node_modules/@astrojs/starlight/node_modules/js-yaml"]["version"]
+if not resolved_js_yaml.startswith("4.3."):
+    raise SystemExit(f"Starlight js-yaml did not resolve to the supported patched v4 line: {resolved_js_yaml}")
 if not package_lock["packages"]["node_modules/gray-matter/node_modules/js-yaml"]["version"].startswith("3."):
     raise SystemExit("gray-matter must retain its compatible js-yaml 3.x dependency")
 if re.findall(r"(?m)^USER[ \\t]+(.+)$", dockerfile_text) != ["1000:1000"]:
