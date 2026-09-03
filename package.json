@@ -42,10 +42,10 @@
     "@scalar/api-reference-react": "^0.9.65",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.5",
-    "astro": "^7.2.7",
+    "astro": "^7.2.8",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
-    "sharp": "^0.35.3",
+    "sharp": "^0.35.4",
     "starlight-openapi": "^0.26.1",
     "unist-util-visit": "^5.1.0",
     "unocss": "^66.8.1"
