@@ -102,6 +102,9 @@ jobs:
             -v "$output:/output" \
             "$PILOT_IMAGE"
           test -f "$output/index.html"
+          test -f "$output/llms.txt"
+          test -f "$output/llms-full.txt"
+          test -f "$output/llms-small.txt"
 
       - name: Publish protected-main multi-architecture image and cache
         id: publish
@@ -176,6 +179,9 @@ jobs:
             -v "$output:/output" \
             "$image"
           test -f "$output/index.html"
+          test -f "$output/llms.txt"
+          test -f "$output/llms-full.txt"
+          test -f "$output/llms-small.txt"
 
   dispatch:
     name: Trigger downstream Pages rebuilds
