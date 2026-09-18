@@ -162,7 +162,11 @@ if overrides.get("gray-matter", {}).get("js-yaml") != "^3.15.0":
 resolved_js_yaml = package_lock["packages"]["node_modules/@astrojs/starlight/node_modules/js-yaml"]["version"]
 if not resolved_js_yaml.startswith("4.3."):
     raise SystemExit(f"Starlight js-yaml did not resolve to the supported patched v4 line: {resolved_js_yaml}")
-if not package_lock["packages"]["node_modules/gray-matter/node_modules/js-yaml"]["version"].startswith("3."):
+gray_matter_js_yaml = (
+    package_lock["packages"].get("node_modules/gray-matter/node_modules/js-yaml")
+    or package_lock["packages"].get("node_modules/js-yaml")
+)
+if not isinstance(gray_matter_js_yaml, dict) or not gray_matter_js_yaml.get("version", "").startswith("3."):
     raise SystemExit("gray-matter must retain its compatible js-yaml 3.x dependency")
 if re.findall(r"(?m)^USER[ \\t]+(.+)$", dockerfile_text) != ["1000:1000"]:
     raise SystemExit("runtime container user must use the numeric node UID and GID")
