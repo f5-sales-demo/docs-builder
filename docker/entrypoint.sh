@@ -4,6 +4,44 @@ set -e
 CONTENT_DIR="${CONTENT_DIR:-/content/docs}"
 OUTPUT_DIR="${OUTPUT_DIR:-/output}"
 GENERATE_PDF="${GENERATE_PDF:-false}"
+MACHINE_CORPUS_DIR="${MACHINE_CORPUS_DIR:-}"
+
+# A verified machine corpus is mounted separately from Starlight content. Its
+# Markdown feeds only the progressive text routes; the complete immutable tree
+# is copied to public/snapshot for provenance and stable asset URLs.
+if [ -n "$MACHINE_CORPUS_DIR" ]; then
+  if [ ! -d "$MACHINE_CORPUS_DIR" ]; then
+    echo "ERROR: Machine corpus directory not found at $MACHINE_CORPUS_DIR"
+    exit 1
+  fi
+  CORPUS_ROOT=$(realpath "$MACHINE_CORPUS_DIR")
+  case "$CORPUS_ROOT" in
+    /app/src/content/docs|/app/src/content/docs/*)
+      echo "ERROR: Machine corpus must remain outside the Starlight docs collection"
+      exit 1
+      ;;
+  esac
+  for required in manifest.json SHA256SUMS content; do
+    if [ ! -e "$CORPUS_ROOT/$required" ]; then
+      echo "ERROR: Machine corpus is missing $required"
+      exit 1
+    fi
+  done
+  if find "$CORPUS_ROOT" -type l | grep -q .; then
+    echo "ERROR: Machine corpus must not contain symbolic links"
+    exit 1
+  fi
+  if ! node -e "const m=JSON.parse(require('fs').readFileSync(process.argv[1])); if(m.schema_version!==2||!Array.isArray(m.documents)||!Array.isArray(m.assets)) process.exit(1)" "$CORPUS_ROOT/manifest.json"; then
+    echo "ERROR: Machine corpus manifest is not schema version 2"
+    exit 1
+  fi
+  rm -rf /app/public/snapshot
+  mkdir -p /app/public/snapshot
+  cp -R "$CORPUS_ROOT"/. /app/public/snapshot/
+  MACHINE_CORPUS_DIR="$CORPUS_ROOT"
+  export MACHINE_CORPUS_DIR
+  echo "Progressive machine corpus mounted from $CORPUS_ROOT"
+fi
 
 # Inject content
 if [ -d "$CONTENT_DIR" ]; then

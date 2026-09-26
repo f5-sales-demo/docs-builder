@@ -75,6 +75,19 @@ fi
 
 Copies the mounted content into Astro's content collection directory. Exits with an error if the content directory is missing.
 
+### Optional machine corpus
+
+Set `MACHINE_CORPUS_DIR` to a separately mounted, previously verified
+snapshot tree. The tree must contain manifest schema v2, `SHA256SUMS`, and a
+`content/` directory. It is never copied into Starlight's content collection,
+so corpus Markdown does not produce HTML pages. The builder instead exposes the
+tree unchanged under `/snapshot/` and enables the progressive `llms.txt`,
+`llms-full.txt`, and `/_llms-txt/` routes supplied by docs-theme.
+
+Mount the snapshot read-only. Archive extraction and publication-receipt
+verification belong to the reusable Pages workflow and must complete before
+the builder starts.
+
 ### Step 4: Extract Title
 
 ```sh
@@ -121,6 +134,7 @@ Copies the built site to the output mount point.
 | --- | --- | --- |
 | `CONTENT_DIR` | `/content/docs` | Path to the mounted content directory |
 | `OUTPUT_DIR` | `/output` | Path where the built site is copied |
+| `MACHINE_CORPUS_DIR` | *(unset)* | Read-only verified corpus tree published under `/snapshot/` and used by progressive text routes |
 | `DOCS_TITLE` | *(extracted from index.mdx)* | Site title passed to the Astro config |
 | `DOCS_DESCRIPTION` | *(extracted from index.mdx)* | Site description from frontmatter |
 | `DOCS_BASE` | *(derived from `GITHUB_REPOSITORY`)* | Base path for the site (e.g., `/my-docs`) |
@@ -136,7 +150,7 @@ To build documentation locally using Docker:
 
 ```sh
 docker run --rm \
-  -v "$(pwd)/docs:/content/docs" \
+  -v "$(pwd)/docs:/content/docs:ro" \
   -v "$(pwd)/output:/output" \
   ghcr.io/f5-sales-demo/docs-builder:latest
 ```
@@ -176,11 +190,12 @@ The image is published to GitHub Container Registry:
 ghcr.io/f5-sales-demo/docs-builder
 ```
 
-Two tags are pushed on every build:
+Three tags are pushed on every protected-main build:
 
 | Tag | Description |
 | --- | --- |
 | `latest` | Most recent build from `main` |
+| `<version>` | Immutable SemVer release, such as `1.1.0` |
 | `<sha>` | Full Git commit SHA for reproducible builds |
 
 See [CI/CD and Governance](../ci-cd/) for the workflow that builds and publishes the image.
