@@ -152,6 +152,13 @@ if [ -z "$DOCS_BASE" ] && [ -n "$GITHUB_REPOSITORY" ]; then
   export DOCS_BASE
 fi
 
+# A corpus landing page is its own navigation root. Keep the site title local
+# unless the caller explicitly supplies a different home URL.
+if [ -n "$MACHINE_CORPUS_DIR" ] && [ -z "${DOCS_HOME:-}" ]; then
+  DOCS_HOME="${DOCS_BASE%/}/"
+  export DOCS_HOME
+fi
+
 # Derive site URL from repository owner (if not set via env)
 if [ -z "$DOCS_SITE" ] && [ -n "$GITHUB_REPOSITORY_OWNER" ]; then
   DOCS_SITE="https://${GITHUB_REPOSITORY_OWNER}.github.io"
