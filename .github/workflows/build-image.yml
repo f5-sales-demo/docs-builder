@@ -29,10 +29,6 @@ jobs:
         with:
           persist-credentials: false
 
-      # The immutable runner image provides the catalogued Node.js toolchain.
-      - name: Resolve latest docs-theme
-        run: npm update @f5-sales-demo/docs-theme --package-lock-only --legacy-peer-deps
-
       - name: Audit production dependencies
         run: npm audit --omit=dev --audit-level=high
 

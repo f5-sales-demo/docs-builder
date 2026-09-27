@@ -76,15 +76,27 @@ checkout_step = next(step for step in steps if step.get("uses", "").startswith("
 if checkout_step.get("with", {}).get("persist-credentials") is not False:
     raise SystemExit("image build checkout must not persist GitHub credentials")
 
-resolve_index = names.index("Resolve latest docs-theme")
 audit_index = names.index("Audit production dependencies")
 publish_index = names.index("Publish protected-main multi-architecture image and cache")
-if not resolve_index < audit_index < publish_index:
+if not audit_index < publish_index:
     raise SystemExit("production audit must run before image publication")
-if steps[resolve_index].get("run") != "npm update @f5-sales-demo/docs-theme --package-lock-only --legacy-peer-deps":
-    raise SystemExit("theme refresh must update only the lockfile")
+if "Resolve latest docs-theme" in names:
+    raise SystemExit("image publication must not resolve a floating theme version")
 if steps[audit_index].get("run") != "npm audit --omit=dev --audit-level=high":
     raise SystemExit("production audit must fail on high or critical advisories")
+
+expected_builder_version = "1.1.1"
+expected_theme_version = "4.1.4"
+if package.get("version") != expected_builder_version:
+    raise SystemExit("docs-builder package version must be 1.1.1")
+if package_lock.get("version") != expected_builder_version:
+    raise SystemExit("docs-builder lockfile version must be 1.1.1")
+if package.get("dependencies", {}).get("@f5-sales-demo/docs-theme") != expected_theme_version:
+    raise SystemExit("docs-theme must be pinned exactly to 4.1.4")
+if package_lock["packages"][""]["dependencies"].get("@f5-sales-demo/docs-theme") != expected_theme_version:
+    raise SystemExit("lockfile root must pin docs-theme exactly to 4.1.4")
+if package_lock["packages"]["node_modules/@f5-sales-demo/docs-theme"].get("version") != expected_theme_version:
+    raise SystemExit("lockfile must resolve docs-theme 4.1.4")
 
 publish = steps[publish_index]
 if publish.get("if") != "github.ref == 'refs/heads/main' && github.ref_protected":
