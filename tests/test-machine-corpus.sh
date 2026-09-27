@@ -49,6 +49,7 @@ FIXTURE_PARENT=${RUNNER_TEMP:-${TMPDIR:-/tmp}}
 FIXTURE=$(mktemp -d "$FIXTURE_PARENT/docs-builder-machine-corpus.XXXXXX")
 cleanup_fixture() {
   docker run --rm --pull=never \
+    --user 0:0 \
     --entrypoint chown \
     -v "$FIXTURE:/fixture" \
     "$DOCS_BUILDER_IMAGE" \
