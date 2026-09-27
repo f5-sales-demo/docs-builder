@@ -47,7 +47,15 @@ fi
 command -v docker >/dev/null
 FIXTURE_PARENT=${RUNNER_TEMP:-${TMPDIR:-/tmp}}
 FIXTURE=$(mktemp -d "$FIXTURE_PARENT/docs-builder-machine-corpus.XXXXXX")
-trap 'rm -rf "$FIXTURE"' EXIT
+cleanup_fixture() {
+  docker run --rm --pull=never \
+    --entrypoint chown \
+    -v "$FIXTURE:/fixture" \
+    "$DOCS_BUILDER_IMAGE" \
+    -R "$(id -u):$(id -g)" /fixture
+  rm -rf "$FIXTURE"
+}
+trap cleanup_fixture EXIT
 DOCS="$FIXTURE/docs"
 CORPUS="$FIXTURE/corpus"
 OUTPUT_ONE="$FIXTURE/output-one"
