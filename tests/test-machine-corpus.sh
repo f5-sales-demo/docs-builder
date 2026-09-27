@@ -16,8 +16,8 @@ entrypoint = open(sys.argv[1], encoding="utf-8").read()
 workflow = yaml.safe_load(open(sys.argv[2], encoding="utf-8"))
 package = json.load(open(sys.argv[3], encoding="utf-8"))
 
-if package.get("version") != "1.1.0":
-    raise SystemExit("docs-builder package version must be 1.1.0")
+if package.get("version") != "1.1.1":
+    raise SystemExit("docs-builder package version must be 1.1.1")
 if "vite" not in package.get("dependencies", {}):
     raise SystemExit("docs-builder must install Vite explicitly for the container runtime")
 for required in ("MACHINE_CORPUS_DIR", "/app/public/snapshot", "manifest.json", "SHA256SUMS"):
@@ -34,7 +34,7 @@ for required_name in (
         raise SystemExit(f"image workflow missing {required_name}")
 publish = steps[names.index("Publish protected-main multi-architecture image and cache")]["run"]
 if '--tag "$IMAGE_NAME:$IMAGE_VERSION"' not in publish:
-    raise SystemExit("image publication must include the immutable 1.1.0 version tag")
+    raise SystemExit("image publication must include the immutable 1.1.1 version tag")
 if "IMAGE_VERSION" not in steps[names.index("Set image coordinates")]["run"]:
     raise SystemExit("image version must be derived from package.json")
 PY
