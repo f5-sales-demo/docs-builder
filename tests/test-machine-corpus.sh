@@ -45,7 +45,8 @@ if [ -z "${DOCS_BUILDER_IMAGE:-}" ]; then
 fi
 
 command -v docker >/dev/null
-FIXTURE=$(mktemp -d)
+FIXTURE_PARENT=${RUNNER_TEMP:-${TMPDIR:-/tmp}}
+FIXTURE=$(mktemp -d "$FIXTURE_PARENT/docs-builder-machine-corpus.XXXXXX")
 trap 'rm -rf "$FIXTURE"' EXIT
 DOCS="$FIXTURE/docs"
 CORPUS="$FIXTURE/corpus"
