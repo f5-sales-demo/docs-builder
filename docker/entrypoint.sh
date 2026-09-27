@@ -16,10 +16,10 @@ if [ -n "$MACHINE_CORPUS_DIR" ]; then
   fi
   CORPUS_ROOT=$(realpath "$MACHINE_CORPUS_DIR")
   case "$CORPUS_ROOT" in
-    /app/src/content/docs|/app/src/content/docs/*)
-      echo "ERROR: Machine corpus must remain outside the Starlight docs collection"
-      exit 1
-      ;;
+  /app/src/content/docs | /app/src/content/docs/*)
+    echo "ERROR: Machine corpus must remain outside the Starlight docs collection"
+    exit 1
+    ;;
   esac
   for required in manifest.json SHA256SUMS content; do
     if [ ! -e "$CORPUS_ROOT/$required" ]; then

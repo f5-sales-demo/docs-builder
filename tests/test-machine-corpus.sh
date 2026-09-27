@@ -55,7 +55,7 @@ mkdir -p "$DOCS" "$CORPUS/content/source-a/guide/assets" \
   "$CORPUS/content/source-b/reference/assets" "$OUTPUT_ONE" "$OUTPUT_TWO"
 chmod 0777 "$OUTPUT_ONE" "$OUTPUT_TWO"
 
-cat > "$DOCS/index.mdx" <<'EOF'
+cat >"$DOCS/index.mdx" <<'EOF'
 ---
 title: F5 Docs Corpus
 description: Progressive machine-readable F5 documentation.
@@ -64,7 +64,7 @@ description: Progressive machine-readable F5 documentation.
 Use the machine-readable entry points to browse the immutable corpus.
 EOF
 
-cat > "$CORPUS/content/source-a/guide/index.md" <<'EOF'
+cat >"$CORPUS/content/source-a/guide/index.md" <<'EOF'
 ---
 sourceId: source-a
 title: Source A Guide
@@ -76,7 +76,7 @@ SOURCE_A_UNIQUE_BODY
 ![Diagram](assets/a.png)
 EOF
 
-cat > "$CORPUS/content/source-b/reference/index.md" <<'EOF'
+cat >"$CORPUS/content/source-b/reference/index.md" <<'EOF'
 ---
 sourceId: source-b
 title: Source B Reference
@@ -87,10 +87,10 @@ SOURCE_B_UNIQUE_BODY
 ![Diagram](assets/b.svg)
 EOF
 
-printf 'png-fixture\n' > "$CORPUS/content/source-a/guide/assets/a.png"
-printf '<svg xmlns="http://www.w3.org/2000/svg"/>\n' > "$CORPUS/content/source-b/reference/assets/b.svg"
-printf '{"quality":"accepted"}\n' > "$CORPUS/quality-report.json"
-printf '# Snapshot provenance\n\nExact immutable fixture.\n' > "$CORPUS/provenance.md"
+printf 'png-fixture\n' >"$CORPUS/content/source-a/guide/assets/a.png"
+printf '<svg xmlns="http://www.w3.org/2000/svg"/>\n' >"$CORPUS/content/source-b/reference/assets/b.svg"
+printf '{"quality":"accepted"}\n' >"$CORPUS/quality-report.json"
+printf '# Snapshot provenance\n\nExact immutable fixture.\n' >"$CORPUS/provenance.md"
 
 python3 - "$CORPUS" <<'PY'
 import hashlib
@@ -180,8 +180,14 @@ test -f "$OUTPUT_ONE/snapshot/content/source-a/guide/assets/a.png"
 test -f "$OUTPUT_ONE/snapshot/content/source-b/reference/assets/b.svg"
 grep -Fq 'SOURCE_A_UNIQUE_BODY' "$OUTPUT_ONE/_llms-txt/source-a/guide.txt"
 grep -Fq 'SOURCE_B_UNIQUE_BODY' "$OUTPUT_ONE/_llms-txt/source-b/reference.txt"
-! grep -Fq 'SOURCE_A_UNIQUE_BODY' "$OUTPUT_ONE/llms-full.txt"
-! grep -Fq 'SOURCE_B_UNIQUE_BODY' "$OUTPUT_ONE/llms-full.txt"
+if grep -Fq 'SOURCE_A_UNIQUE_BODY' "$OUTPUT_ONE/llms-full.txt"; then
+  echo "ERROR: llms-full.txt must be a link-only inventory" >&2
+  exit 1
+fi
+if grep -Fq 'SOURCE_B_UNIQUE_BODY' "$OUTPUT_ONE/llms-full.txt"; then
+  echo "ERROR: llms-full.txt must be a link-only inventory" >&2
+  exit 1
+fi
 grep -Fq 'https://example.invalid/html-to-markdown/snapshot/content/source-a/guide/assets/a.png' \
   "$OUTPUT_ONE/_llms-txt/source-a/guide.txt"
 grep -Fq 'https://example.invalid/html-to-markdown/snapshot/content/source-b/reference/assets/b.svg' \
