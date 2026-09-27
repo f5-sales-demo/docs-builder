@@ -40,10 +40,12 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          image_version=$(jq -er '.version | select(test("^[0-9]+\\.[0-9]+\\.[0-9]+$"))' package.json)
           {
             echo "IMAGE_NAME=ghcr.io/${GITHUB_REPOSITORY,,}"
             echo "CACHE_IMAGE=ghcr.io/${GITHUB_REPOSITORY,,}:buildcache-main"
             echo "PILOT_IMAGE=docs-builder:pilot-${GITHUB_SHA}"
+            echo "IMAGE_VERSION=$image_version"
           } >> "$GITHUB_ENV"
 
       - name: Refuse publication from an unprotected main branch
@@ -106,6 +108,12 @@ jobs:
           test -f "$output/llms-full.txt"
           test -f "$output/llms-small.txt"
 
+      - name: Exercise progressive machine corpus in branch pilot
+        if: github.ref != 'refs/heads/main'
+        env:
+          DOCS_BUILDER_IMAGE: ${{ env.PILOT_IMAGE }}
+        run: bash tests/test-machine-corpus.sh
+
       - name: Publish protected-main multi-architecture image and cache
         id: publish
         if: github.ref == 'refs/heads/main' && github.ref_protected
@@ -122,6 +130,7 @@ jobs:
             if docker buildx build \
               --platform linux/amd64,linux/arm64 \
               --tag "$IMAGE_NAME:latest" \
+              --tag "$IMAGE_NAME:$IMAGE_VERSION" \
               --tag "$IMAGE_NAME:$IMAGE_SHA" \
               --file docker/Dockerfile \
               --cache-from "type=registry,ref=$CACHE_IMAGE" \
@@ -158,6 +167,19 @@ jobs:
           docker buildx imagetools inspect "$IMAGE_NAME@$IMAGE_DIGEST" --raw |
             jq -e '[.manifests[].platform | select(.os == "linux") | "\(.os)/\(.architecture)"] | sort == ["linux/amd64", "linux/arm64"]'
 
+      - name: Verify immutable and latest image tags
+        if: github.ref == 'refs/heads/main' && github.ref_protected
+        env:
+          IMAGE_DIGEST: ${{ env.IMAGE_DIGEST }}
+          IMAGE_NAME: ${{ env.IMAGE_NAME }}
+          IMAGE_VERSION: ${{ env.IMAGE_VERSION }}
+        run: |
+          set -euo pipefail
+          for tag in latest "$IMAGE_VERSION"; do
+            resolved=$(docker buildx imagetools inspect "$IMAGE_NAME:$tag" | awk '$1 == "Digest:" { print $2; exit }')
+            test "$resolved" = "$IMAGE_DIGEST"
+          done
+
       - name: Pull and smoke-test the published native image by digest
         if: github.ref == 'refs/heads/main' && github.ref_protected
         env:
@@ -182,6 +204,12 @@ jobs:
           test -f "$output/llms.txt"
           test -f "$output/llms-full.txt"
           test -f "$output/llms-small.txt"
+
+      - name: Exercise progressive machine corpus in published image
+        if: github.ref == 'refs/heads/main' && github.ref_protected
+        env:
+          DOCS_BUILDER_IMAGE: ${{ env.IMAGE_NAME }}@${{ env.IMAGE_DIGEST }}
+        run: bash tests/test-machine-corpus.sh
 
   dispatch:
     name: Trigger downstream Pages rebuilds

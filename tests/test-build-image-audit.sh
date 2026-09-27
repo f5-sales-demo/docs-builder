@@ -93,6 +93,7 @@ publish_shell = publish["run"]
 for required in (
     "--platform linux/amd64,linux/arm64",
     '--tag "$IMAGE_NAME:latest"',
+    '--tag "$IMAGE_NAME:$IMAGE_VERSION"',
     '--tag "$IMAGE_NAME:$IMAGE_SHA"',
     '--cache-from "type=registry,ref=$CACHE_IMAGE"',
     '--cache-to "type=registry,ref=$CACHE_IMAGE,mode=max"',
