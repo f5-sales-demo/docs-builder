@@ -229,7 +229,11 @@ jobs:
             temp="${url#https://}"
             org="${temp%%.*}"
             path="${temp#*/}"
-            repo="${org}/${path%%/*}"
+            if [[ "$path" == 'llms-full.txt' ]]; then
+              repo="${org}/${org}.github.io"
+            else
+              repo="${org}/${path%%/*}"
+            fi
             echo "Dispatching github-pages-deploy.yml to ${repo}..."
             if gh workflow run github-pages-deploy.yml --repo "$repo"; then
               echo "  [OK] ${repo}"
