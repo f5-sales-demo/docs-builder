@@ -45,7 +45,14 @@ fi
 
 # Inject content
 if [ -d "$CONTENT_DIR" ]; then
-  cp -r "$CONTENT_DIR"/* /app/src/content/docs/
+  if [ "${DOCS_PROFILE:-}" = canonical-provider ]; then
+    export NODE_OPTIONS="${NODE_OPTIONS:---max-old-space-size=14336}"
+    export PROVIDER_NAVIGATION=/app/provider-navigation.json
+    export CANONICAL_MANIFEST="$CONTENT_DIR/generated-manifest.json"
+    node /app/docker/canonical-provider.mjs stage "$CONTENT_DIR" /app/src/content/docs
+  else
+    cp -r "$CONTENT_DIR"/* /app/src/content/docs/
+  fi
 else
   echo "ERROR: No content found at $CONTENT_DIR"
   exit 1
@@ -171,6 +178,7 @@ mkdir -p /app/public
 # Auto-detect static asset directories (no .md/.mdx files) and symlink to public
 for dir in "$CONTENT_DIR"/*/; do
   [ -d "$dir" ] || continue
+  [ "${DOCS_PROFILE:-}" != canonical-provider ] || continue
   dirname=$(basename "$dir")
   # Skip if directory contains any .md or .mdx files
   if ! find "$dir" -maxdepth 1 -name '*.md' -o -name '*.mdx' | grep -q .; then
@@ -192,6 +200,11 @@ fi
 
 # Build
 npm run build
+
+if [ "${DOCS_PROFILE:-}" = canonical-provider ]; then
+  node /app/docker/canonical-provider.mjs receipt "$CONTENT_DIR" /app/dist
+  node /app/docker/verify-provider-output.mjs "$CONTENT_DIR" /app/dist
+fi
 
 # --- PDF Generation (optional) ---
 if [ "$GENERATE_PDF" = "true" ]; then

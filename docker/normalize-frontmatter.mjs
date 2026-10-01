@@ -51,9 +51,26 @@ function split(lines) {
 // Restricting to the first non-blank line keeps us from stripping section headings
 // or `#` comments inside fenced code blocks deeper in the document.
 function findTitleH1(body) {
+  let inComment = false;
   for (let i = 0; i < body.length; i++) {
-    if (body[i].trim() === '') continue;
-    const m = body[i].match(H1_RE);
+    let line = body[i].trim();
+    while (line || inComment) {
+      if (inComment) {
+        const end = line.indexOf('-->');
+        if (end < 0) {
+          line = '';
+          break;
+        }
+        line = line.slice(end + 3).trim();
+        inComment = false;
+      } else if (line.startsWith('<!--')) {
+        inComment = true;
+        line = line.slice(4);
+      } else break;
+    }
+    if (line === '') continue;
+    // Stop at the first visible token, including code fences.
+    const m = line.match(H1_RE);
     return m ? { index: i, text: m[1] } : null;
   }
   return null;
