@@ -22,7 +22,9 @@ ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
 
 # Install deps (cached layer)
 COPY package*.json ./
-RUN npm ci --legacy-peer-deps
+COPY vendor/npm/ ./vendor/npm/
+COPY scripts/seed-npm-cache.mjs ./scripts/seed-npm-cache.mjs
+RUN npm run cache:seed && npm ci --legacy-peer-deps --prefer-offline
 
 # Copy framework code
 COPY . .

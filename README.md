@@ -33,3 +33,28 @@ branch naming, and CI requirements.
 ## License
 
 See [LICENSE](LICENSE).
+
+## Verified npm artifact cache
+
+The builder keeps the published docs-theme archive in `vendor/npm/`. Its manifest
+records the original npm URL, exact version, and SHA-512 integrity. The dependency
+and lockfile use a repository-relative archive path. `npm run cache:seed` rejects
+bytes or versions that disagree with the manifest or lockfile before caching them.
+
+On macOS, Windows PowerShell, and Linux, run from the repository root:
+
+```sh
+npm run cache:seed
+npm ci --legacy-peer-deps --prefer-offline
+```
+
+The JavaScript helper invokes npm directly and supports paths containing spaces.
+Install native dependencies separately for each operating system. The theme
+archive is portable; `node_modules` is platform-specific. Other dependencies still
+need registry access unless already cached.
+
+Docker verifies and installs the archive during image construction and bakes the
+installed theme and configuration into the image. Runtime documentation builds
+require no theme download. To update the archive, retrieve the exact published
+version, verify npm `dist.integrity`, update the manifest, and regenerate the
+lockfile. Preserve the published bytes rather than repacking source.
