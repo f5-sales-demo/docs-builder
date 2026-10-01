@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "artifacts": [
+    {
+      "name": "@f5-sales-demo/docs-theme",
+      "version": "4.4.0",
+      "file": "docs-theme-4.4.0.tgz",
+      "integrity": "sha512-lS3AIUNxfCKE+cmvpD9eQQXhzsE6TUq0pU0b5y7Lmfrt93KBJeiLifgvsuVbKbqOg796twG7KIUjeOn/XwJgOw==",
+      "source": "https://registry.npmjs.org/@f5-sales-demo/docs-theme/-/docs-theme-4.4.0.tgz"
+    }
+  ]
+}

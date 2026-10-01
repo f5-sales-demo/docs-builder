@@ -6,7 +6,9 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview --host 0.0.0.0",
-    "astro": "astro"
+    "astro": "astro",
+    "cache:seed": "node scripts/seed-npm-cache.mjs",
+    "test:cache": "node --test tests/cache-seed.test.mjs"
   },
   "allowScripts": {
     "esbuild": true,
@@ -17,7 +19,7 @@
     "@astrojs/markdown-remark": ">=7.2.4",
     "@astrojs/react": "^6.0.4",
     "@astrojs/starlight": "0.41.9",
-    "@f5-sales-demo/docs-theme": "file:../../../../tmp/f5-sales-demo-docs-theme-3.9.1.tgz",
+    "@f5-sales-demo/docs-theme": "file:vendor/npm/docs-theme-4.4.0.tgz",
     "@f5-sales-demo/icons-aws": "*",
     "@f5-sales-demo/icons-azure": "*",
     "@f5-sales-demo/icons-carbon": "*",
