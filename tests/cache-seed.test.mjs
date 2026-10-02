@@ -26,13 +26,13 @@ test('portable cache seeds exact lockfile bytes and installs verified tarball of
       'node_modules/@f5-sales-demo/docs-theme'
     ];
     const pacotePath = resolve(dirname(npmCli), '../node_modules/pacote');
-    const script = `const pacote=require(${JSON.stringify(pacotePath)});pacote.tarball(${JSON.stringify(join(root, 'vendor/npm/docs-theme-4.4.8.tgz'))},{cache:${JSON.stringify(cache)},integrity:${JSON.stringify(entry.integrity)},offline:true}).then(b=>require('fs').writeFileSync(${JSON.stringify(join(root, 'offline.tgz'))},b));`;
+    const script = `const pacote=require(${JSON.stringify(pacotePath)});pacote.tarball(${JSON.stringify(join(root, 'vendor/npm/docs-theme-4.4.9.tgz'))},{cache:${JSON.stringify(cache)},integrity:${JSON.stringify(entry.integrity)},offline:true}).then(b=>require('fs').writeFileSync(${JSON.stringify(join(root, 'offline.tgz'))},b));`;
     execFileSync(process.execPath, ['-e', script]);
     assert.deepEqual(
       readFileSync(join(root, 'offline.tgz')),
-      readFileSync(join(root, 'vendor/npm/docs-theme-4.4.8.tgz')),
+      readFileSync(join(root, 'vendor/npm/docs-theme-4.4.9.tgz')),
     );
-    writeFileSync(join(root, 'vendor/npm/docs-theme-4.4.8.tgz'), 'altered');
+    writeFileSync(join(root, 'vendor/npm/docs-theme-4.4.9.tgz'), 'altered');
     assert.throws(
       () => execFileSync(process.execPath, [join(root, 'scripts/seed-npm-cache.mjs')], { stdio: 'pipe' }),
       /integrity mismatch/,

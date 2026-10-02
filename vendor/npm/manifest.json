@@ -3,10 +3,10 @@
   "artifacts": [
     {
       "name": "@f5-sales-demo/docs-theme",
-      "version": "4.4.8",
-      "file": "docs-theme-4.4.8.tgz",
-      "integrity": "sha512-pLzvUe8l+vs+VH9hMUU3+2vhgVwDKm/PUHZ1WpGZe+y6XO0C8XaQzWSGchwtnPU3xkYHHXXNGSPuz7xoX5LG1Q==",
-      "source": "https://registry.npmjs.org/@f5-sales-demo/docs-theme/-/docs-theme-4.4.8.tgz"
+      "version": "4.4.9",
+      "file": "docs-theme-4.4.9.tgz",
+      "integrity": "sha512-r9fXIZcp5dFUbWnyavmAriDO+kqWUuRl/D8VUFJ3/zBR2zGFhhnX+/Tp414vgkU7x3A5au76eeiYmVYHIvaa7Q==",
+      "source": "https://registry.npmjs.org/@f5-sales-demo/docs-theme/-/docs-theme-4.4.9.tgz"
     }
   ]
 }
