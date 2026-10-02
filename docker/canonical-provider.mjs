@@ -96,7 +96,15 @@ if (mode === 'stage') {
     const bytes = readFileSync(output);
     transformed[relative(target, output)] = { bytes: bytes.length, sha256: hash(bytes) };
   }
-  const html = readdirSync(target, { recursive: true }).filter((name) => name.endsWith('.html') && name !== '404.html');
+  const redirect = join(target, 'en/index.html');
+  const redirectHtml = readFileSync(redirect, 'utf8');
+  if (!redirectHtml.includes(`content="0;url=${base}/"`))
+    throw new Error('English entry redirect does not target this publication root');
+  const redirectBytes = readFileSync(redirect);
+  transformed['en/index.html'] = { bytes: redirectBytes.length, sha256: hash(redirectBytes) };
+  const html = readdirSync(target, { recursive: true }).filter(
+    (name) => name.endsWith('.html') && name !== '404.html' && name !== 'en/index.html',
+  );
   if (html.length !== pages.length + landingPages.length)
     throw new Error(`Unexpected HTML route count: ${html.length} != ${pages.length + landingPages.length}`);
   writeFileSync(
@@ -110,6 +118,7 @@ if (mode === 'stage') {
         base,
         route_count: pages.length + landingPages.length,
         canonical_route_count: pages.length,
+        redirect_route_count: 1,
         source_manifest_sha256: hash(manifestBytes),
         transformed,
       },
