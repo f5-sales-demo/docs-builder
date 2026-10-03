@@ -1,6 +1,6 @@
 {
   "name": "@f5-sales-demo/http-cache-semantics-security",
-  "version": "4.2.0-f5.1",
+  "version": "4.2.0-f5.2",
   "description": "Parses Cache-Control and other headers. Helps building correct HTTP caches and proxies",
   "repository": {
     "type": "git",
@@ -11,6 +11,5 @@
   "files": [
     "index.js"
   ],
-  "author": "Kornel Lesi\u0144ski <npms2@geekhood.net> (https://kornel.ski/)",
   "license": "BSD-2-Clause"
 }
