@@ -17,6 +17,8 @@ test('portable cache seeds exact lockfile bytes and installs verified tarball of
     cpSync(join(source, 'scripts/seed-npm-cache.mjs'), join(root, 'scripts/seed-npm-cache.mjs'));
     cpSync(join(source, 'vendor'), join(root, 'vendor'), { recursive: true });
     cpSync(join(source, 'package-lock.json'), join(root, 'package-lock.json'));
+    const artifact = JSON.parse(readFileSync(join(root, 'vendor/npm/manifest.json'))).artifacts[0];
+    const artifactPath = join(root, 'vendor/npm', artifact.file);
     const cache = join(root, 'cache');
     execFileSync(process.execPath, [join(root, 'scripts/seed-npm-cache.mjs')], {
       env: { ...process.env, npm_config_cache: cache },
@@ -26,13 +28,10 @@ test('portable cache seeds exact lockfile bytes and installs verified tarball of
       'node_modules/@f5-sales-demo/docs-theme'
     ];
     const pacotePath = resolve(dirname(npmCli), '../node_modules/pacote');
-    const script = `const pacote=require(${JSON.stringify(pacotePath)});pacote.tarball(${JSON.stringify(join(root, 'vendor/npm/docs-theme-4.4.12.tgz'))},{cache:${JSON.stringify(cache)},integrity:${JSON.stringify(entry.integrity)},offline:true}).then(b=>require('fs').writeFileSync(${JSON.stringify(join(root, 'offline.tgz'))},b));`;
+    const script = `const pacote=require(${JSON.stringify(pacotePath)});pacote.tarball(${JSON.stringify(artifactPath)},{cache:${JSON.stringify(cache)},integrity:${JSON.stringify(entry.integrity)},offline:true}).then(b=>require('fs').writeFileSync(${JSON.stringify(join(root, 'offline.tgz'))},b));`;
     execFileSync(process.execPath, ['-e', script]);
-    assert.deepEqual(
-      readFileSync(join(root, 'offline.tgz')),
-      readFileSync(join(root, 'vendor/npm/docs-theme-4.4.12.tgz')),
-    );
-    writeFileSync(join(root, 'vendor/npm/docs-theme-4.4.12.tgz'), 'altered');
+    assert.deepEqual(readFileSync(join(root, 'offline.tgz')), readFileSync(artifactPath));
+    writeFileSync(artifactPath, 'altered');
     assert.throws(
       () => execFileSync(process.execPath, [join(root, 'scripts/seed-npm-cache.mjs')], { stdio: 'pipe' }),
       /integrity mismatch/,

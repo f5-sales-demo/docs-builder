@@ -1,0 +1,15 @@
+{
+  "name": "@f5-sales-demo/http-cache-semantics-security",
+  "version": "4.2.0-f5.2",
+  "description": "Parses Cache-Control and other headers. Helps building correct HTTP caches and proxies",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kornelski/http-cache-semantics.git"
+  },
+  "main": "index.js",
+  "types": "index.js",
+  "files": [
+    "index.js"
+  ],
+  "license": "BSD-2-Clause"
+}

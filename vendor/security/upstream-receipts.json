@@ -1,0 +1,12 @@
+[
+  {
+    "package": "braces",
+    "upstream_version": "3.0.3",
+    "upstream_tarball_sha256": "1cd18e862c8640b4568b1425a7df4ee030ff201d45b2da8f9f222d2987494ffc"
+  },
+  {
+    "package": "http-cache-semantics",
+    "upstream_version": "4.2.0",
+    "upstream_tarball_sha256": "f57454db8ab2d06a4baabbfb7c70ad4181a00b7ee0efebcdffa9ba313bd80eb7"
+  }
+]

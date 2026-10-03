@@ -43,6 +43,14 @@ if [ -n "$MACHINE_CORPUS_DIR" ]; then
   echo "Progressive machine corpus mounted from $CORPUS_ROOT"
 fi
 
+# Load publication configuration directly from the selected source root before
+# staging; canonical staging copies only manifest-owned content.
+if [ "${DOCS_PROFILE:-}" = canonical-provider ]; then
+  node -e "JSON.parse(require('fs').readFileSync(process.argv[1],'utf8'))" "$CONTENT_DIR/llms-config.json"
+  LLMS_CONFIG=$(cat "$CONTENT_DIR/llms-config.json")
+  export LLMS_CONFIG
+fi
+
 # Inject content
 if [ -d "$CONTENT_DIR" ]; then
   if [ "${DOCS_PROFILE:-}" = canonical-provider ]; then
