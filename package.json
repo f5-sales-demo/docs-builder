@@ -8,7 +8,8 @@
     "preview": "astro preview --host 0.0.0.0",
     "astro": "astro",
     "cache:seed": "node scripts/seed-npm-cache.mjs",
-    "test:cache": "node --test tests/cache-seed.test.mjs"
+    "test:cache": "node --test tests/cache-seed.test.mjs",
+    "test:security": "node --test tests/security-dependencies.test.mjs"
   },
   "allowScripts": {
     "esbuild": true,
@@ -50,7 +51,9 @@
     "starlight-openapi": "^0.26.1",
     "unist-util-visit": "^5.1.0",
     "unocss": "^66.8.1",
-    "vite": "^8.3.1"
+    "vite": "^8.3.1",
+    "braces": "file:vendor/security/f5-sales-demo-braces-security-3.0.3-f5.1.tgz",
+    "http-cache-semantics": "file:vendor/security/f5-sales-demo-http-cache-semantics-security-4.2.0-f5.1.tgz"
   },
   "overrides": {
     "dompurify": "^3.4.0",
@@ -67,6 +70,8 @@
     "astro": "$astro",
     "ai": "6.0.286",
     "@ai-sdk/provider-utils": "4.0.51",
-    "undici": "7.29.1"
+    "undici": "7.29.1",
+    "braces": "$braces",
+    "http-cache-semantics": "$http-cache-semantics"
   }
 }

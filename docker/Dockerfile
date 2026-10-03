@@ -23,11 +23,14 @@ ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
 # Install deps (cached layer)
 COPY package*.json ./
 COPY vendor/npm/ ./vendor/npm/
+COPY vendor/security/ ./vendor/security/
 COPY scripts/seed-npm-cache.mjs ./scripts/seed-npm-cache.mjs
 RUN npm run cache:seed && npm ci --legacy-peer-deps --prefer-offline
 
 # Copy framework code
 COPY . .
+
+RUN npm run test:security
 
 # Bake theme config into the image (single source of truth)
 RUN cp node_modules/@f5-sales-demo/docs-theme/astro.config.mjs /app/astro.config.mjs && \
