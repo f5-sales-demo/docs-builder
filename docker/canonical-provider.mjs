@@ -121,6 +121,9 @@ if (mode === 'stage') {
         redirect_route_count: 1,
         source_manifest_sha256: hash(manifestBytes),
         transformed,
+        llms_hierarchy: existsSync(join(target, 'llms-hierarchy-receipt.json'))
+          ? JSON.parse(readFileSync(join(target, 'llms-hierarchy-receipt.json')))
+          : undefined,
       },
       null,
       2,
