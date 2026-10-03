@@ -211,6 +211,7 @@ npm run build
 
 if [ "${DOCS_PROFILE:-}" = canonical-provider ]; then
   node /app/docker/canonical-provider.mjs receipt "$CONTENT_DIR" /app/dist
+  node /app/docker/compact-publication.mjs /app/dist
   node /app/docker/verify-provider-output.mjs "$CONTENT_DIR" /app/dist
 fi
 
