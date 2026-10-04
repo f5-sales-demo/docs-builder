@@ -16,8 +16,8 @@ entrypoint = open(sys.argv[1], encoding="utf-8").read()
 workflow = yaml.safe_load(open(sys.argv[2], encoding="utf-8"))
 package = json.load(open(sys.argv[3], encoding="utf-8"))
 
-if package.get("version") != "1.3.3":
-    raise SystemExit("docs-builder package version must be 1.3.3")
+if package.get("version") != "1.4.0":
+    raise SystemExit("docs-builder package version must be 1.4.0")
 if "vite" not in package.get("dependencies", {}):
     raise SystemExit("docs-builder must install Vite explicitly for the container runtime")
 for required in ("MACHINE_CORPUS_DIR", "/app/public/snapshot", "manifest.json", "SHA256SUMS"):
@@ -73,7 +73,11 @@ title: F5 Docs Corpus
 description: Progressive machine-readable F5 documentation.
 ---
 
+import CorpusBrowser from '@components/CorpusBrowser.astro';
+
 Use the machine-readable entry points to browse the immutable corpus.
+
+<CorpusBrowser />
 EOF
 
 cat >"$DOCS/llms-config.json" <<'EOF'
@@ -206,6 +210,8 @@ run_builder() {
 
 run_builder "$OUTPUT_ONE"
 run_builder "$OUTPUT_TWO"
+
+node "$REPO_ROOT/tests/check-corpus-browser.mjs" "$OUTPUT_ONE" "$CORPUS/manifest.json"
 
 test -f "$OUTPUT_ONE/index.html"
 test -f "$OUTPUT_ONE/llms.txt"
