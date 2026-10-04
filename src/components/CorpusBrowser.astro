@@ -1,0 +1,84 @@
+---
+import { getProgressivePaths, loadProgressiveCorpus, findProgressiveNode } from '@f5-sales-demo/starlight-llms-txt/progressive-corpus';
+import path from 'node:path';
+
+const contentRoot = process.env.MACHINE_CORPUS_DIR;
+if (!contentRoot) throw new Error('CorpusBrowser requires a verified Markdown snapshot');
+const base = `${(process.env.DOCS_BASE || '').replace(/\/$/, '')}/`;
+const corpus = loadProgressiveCorpus({
+  manifest: path.join(contentRoot, 'manifest.json'),
+  contentRoot,
+  sources: {
+    'docs-cloud-f5-com': { title: 'F5 Distributed Cloud Documentation', description: 'Official product guides, configuration references, and troubleshooting.' },
+    'my-f5-com': { title: 'MyF5 Knowledge', description: 'Support articles, answers, and recommended actions.' },
+    'community-f5-com': { title: 'F5 Community Articles', description: 'Practical guides and examples from the F5 community.' },
+    'www-f5-com': { title: 'F5 Product and Solution Pages', description: 'Product overviews, capabilities, and solution guides.' },
+  },
+  taxonomy: { levels: ['category', 'subcategory'], collapseSingletonSubcategories: true },
+  hints: { strategy: 'first-sentence', maxCharacters: 240 },
+});
+const nodes = getProgressivePaths(corpus.root).map(({ path: route, type }) => {
+  const node = findProgressiveNode(corpus.root, route);
+  if (!node) throw new Error(`Missing corpus route: ${route}`);
+  return {
+    route, type, title: node.meta.title, description: node.meta.description || '',
+    href: `${base}_llms-txt/${route}.txt`,
+    children: node.type === 'directory' ? [...node.children.values()].map((child) => child.slug) : [],
+  };
+});
+const counts = { documents: nodes.filter((node) => node.type === 'leaf').length, sources: corpus.sources.length };
+---
+
+<section class="corpus-browser" aria-labelledby="corpus-browser-title" data-corpus-browser>
+  <div class="browser-heading">
+    <div>
+      <p class="eyebrow">Browse the collection</p>
+      <h2 id="corpus-browser-title">From sources to topics to documents</h2>
+      <p>{counts.documents} curated documents from {counts.sources} sources. Choose a source, narrow the topic, then open a Markdown document.</p>
+    </div>
+  </div>
+  <nav class="corpus-breadcrumbs" aria-label="Collection navigation" data-browser-breadcrumbs></nav>
+  <div class="browser-toolbar">
+    <label for="corpus-search">Find a document</label>
+    <input id="corpus-search" type="search" placeholder="Search titles and summaries" data-browser-search />
+    <a class="markdown-index" href={`${base}llms.txt`} data-browser-index>Open collection index →</a>
+  </div>
+  <p class="browser-status" role="status" aria-live="polite" data-browser-status></p>
+  <div class="corpus-grid" data-browser-grid>
+    {corpus.sources.map((sourceId) => {
+      const source = nodes.find((node) => node.route === sourceId);
+      return source && <article class="corpus-card" data-level="source">
+        <p class="card-kind">Source</p><h3><a href={source.href}>{source.title}</a></h3>
+        <p>{source.description}</p><a href={source.href}>Open source index →</a>
+      </article>;
+    })}
+  </div>
+  <script type="application/json" data-browser-data set:html={JSON.stringify({ nodes, sources: corpus.sources, base }).replace(/</g, '\\u003c')} />
+</section>
+
+<script>
+  import { initializeCorpusBrowser } from '../scripts/corpus-browser';
+  initializeCorpusBrowser();
+  document.addEventListener('astro:page-load', initializeCorpusBrowser);
+</script>
+
+<style>
+  .corpus-browser { margin-block: 3rem; }
+  .browser-heading h2 { margin-top: .25rem; }
+  .eyebrow, .card-kind { font-size: .78rem; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; color: var(--sl-color-gray-2); }
+  .corpus-breadcrumbs { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; margin-block: 1.5rem; }
+  .corpus-breadcrumbs :global(button) { background: transparent; border: 0; color: var(--sl-color-text-accent); padding: .3rem 0; font: inherit; cursor: pointer; text-decoration: underline; }
+  .browser-toolbar { display: flex; flex-wrap: wrap; gap: .75rem; align-items: center; }
+  .browser-toolbar label { font-weight: 600; }
+  .browser-toolbar input { flex: 1 1 16rem; min-width: 0; padding: .65rem .8rem; border: 1px solid var(--sl-color-gray-4); border-radius: .5rem; background: var(--sl-color-bg); color: var(--sl-color-text); font: inherit; }
+  .markdown-index { margin-left: auto; font-size: .9rem; }
+  .browser-status { color: var(--sl-color-gray-2); font-size: .9rem; margin-block: 1rem; }
+  .corpus-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr)); gap: 1rem; }
+  .corpus-card, .corpus-grid :global(.corpus-card) { padding: 1.25rem; border: 1px solid var(--sl-color-gray-5); border-radius: .75rem; background: var(--sl-color-bg); margin: 0; display: flex; flex-direction: column; gap: .75rem; }
+  .corpus-card h3, .corpus-grid :global(h3) { font-size: 1.1rem; margin: 0; }
+  .corpus-card p, .corpus-grid :global(p) { margin: 0; }
+  .corpus-grid :global(.card-description) { font-size: .95rem; line-height: 1.55; }
+  .corpus-grid :global(.card-action) { margin-top: auto; align-self: flex-start; font: inherit; font-size: .9rem; background: transparent; color: var(--sl-color-text-accent); border: 0; padding: .25rem 0; cursor: pointer; text-decoration: underline; }
+  .corpus-grid :global(.card-kind) { font-size: .78rem; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; color: var(--sl-color-gray-2); }
+  @media (max-width: 50rem) { .browser-toolbar { align-items: stretch; } .browser-toolbar label { flex-basis: 100%; } .markdown-index { margin-left: 0; } }
+</style>
