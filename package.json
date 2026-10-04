@@ -1,7 +1,7 @@
 {
   "name": "docs-builder",
   "type": "module",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",
@@ -55,7 +55,7 @@
     "vite": "^8.3.1",
     "braces": "file:vendor/security/f5-sales-demo-braces-security-3.0.3-f5.1.tgz",
     "http-cache-semantics": "file:vendor/security/f5-sales-demo-http-cache-semantics-security-4.2.0-f5.2.tgz",
-    "@f5-sales-demo/starlight-llms-txt": "file:vendor/npm/starlight-llms-txt-2.3.2.tgz"
+    "@f5-sales-demo/starlight-llms-txt": "file:vendor/npm/starlight-llms-txt-2.3.3.tgz"
   },
   "overrides": {
     "dompurify": "^3.4.0",
