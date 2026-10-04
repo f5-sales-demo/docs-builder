@@ -10,10 +10,10 @@
     },
     {
       "name": "@f5-sales-demo/starlight-llms-txt",
-      "version": "2.3.2",
-      "file": "starlight-llms-txt-2.3.2.tgz",
-      "integrity": "sha512-FQ6fWqM9MBAC5c4nGib/1Zc79W0RoR/iJwrhei7Oi9xqpoh7dOVoujQzEvMqGgkf+QNVsUJgu8qYw4JmuLVZuA==",
-      "source": "https://registry.npmjs.org/@f5-sales-demo/starlight-llms-txt/-/starlight-llms-txt-2.3.2.tgz"
+      "version": "2.3.3",
+      "file": "starlight-llms-txt-2.3.3.tgz",
+      "integrity": "sha512-EMVUe6ptlCXTA3QBliLv9w8mMA6SXn6yH3wBfD+G2GOcv3vkmD4yBL/pshujeeo2xWaesp2ysoRFQg+/4gdgDg==",
+      "source": "https://registry.npmjs.org/@f5-sales-demo/starlight-llms-txt/-/starlight-llms-txt-2.3.3.tgz"
     }
   ]
 }

@@ -14,6 +14,7 @@ for (const node of graph.nodes) {
   assert(existsSync(`${output}/_llms-txt/${node.route}.txt`), node.route);
   assert(!/^(?:Published|Last modified)/.test(node.description), node.route);
   assert(!/[\u200B-\u200D\uFEFF]/.test(node.description), node.route);
+  assert(/[\p{Letter}\p{Number}]/u.test(node.description), node.route);
   for (const child of node.children)
     assert(
       graph.nodes.some((node) => node.route === child),
