@@ -16,8 +16,8 @@ entrypoint = open(sys.argv[1], encoding="utf-8").read()
 workflow = yaml.safe_load(open(sys.argv[2], encoding="utf-8"))
 package = json.load(open(sys.argv[3], encoding="utf-8"))
 
-if package.get("version") != "1.4.2":
-    raise SystemExit("docs-builder package version must be 1.4.2")
+if package.get("version") != "1.4.3":
+    raise SystemExit("docs-builder package version must be 1.4.3")
 if "vite" not in package.get("dependencies", {}):
     raise SystemExit("docs-builder must install Vite explicitly for the container runtime")
 for required in ("MACHINE_CORPUS_DIR", "/app/public/snapshot", "manifest.json", "SHA256SUMS"):
