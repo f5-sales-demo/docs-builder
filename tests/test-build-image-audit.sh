@@ -85,9 +85,9 @@ if "Resolve latest docs-theme" in names:
 if steps[audit_index].get("run") != "npm audit --omit=dev --audit-level=high":
     raise SystemExit("production audit must fail on high or critical advisories")
 
-expected_builder_version = "1.4.2"
-expected_theme_version = "4.9.7"
-expected_theme_dependency = "file:vendor/npm/docs-theme-4.9.7.tgz"
+expected_builder_version = "1.4.3"
+expected_theme_version = "4.10.0"
+expected_theme_dependency = "file:vendor/npm/docs-theme-4.10.0.tgz"
 if package.get("version") != expected_builder_version:
     raise SystemExit(f"docs-builder package version must be {expected_builder_version}")
 if package_lock.get("version") != expected_builder_version:
