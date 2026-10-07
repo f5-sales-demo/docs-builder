@@ -1,0 +1,262 @@
+{
+  "csd": {
+    "XCSH_CSD_DEPLOYMENT_MODE": {
+      "name": "XCSH_CSD_DEPLOYMENT_MODE",
+      "defaultHash": "386aaa87"
+    },
+    "XCSH_API_URL": {
+      "name": "XCSH_API_URL",
+      "defaultHash": "91ee13ff"
+    },
+    "XCSH_API_TOKEN": {
+      "name": "XCSH_API_TOKEN",
+      "defaultHash": "a5a052c0"
+    },
+    "XCSH_EMAIL": {
+      "name": "XCSH_EMAIL",
+      "defaultHash": "ddaa05fb"
+    },
+    "XCSH_NAMESPACE": {
+      "name": "XCSH_NAMESPACE",
+      "defaultHash": "0669cdeb"
+    },
+    "XCSH_LB_NAME": {
+      "name": "XCSH_LB_NAME",
+      "defaultHash": "0669cdeb"
+    },
+    "XCSH_DOMAINNAME": {
+      "name": "XCSH_DOMAINNAME",
+      "defaultHash": "2d6e9e96"
+    },
+    "XCSH_ROOT_DOMAIN": {
+      "name": "XCSH_ROOT_DOMAIN",
+      "defaultHash": "1126386c"
+    },
+    "XCSH_ORIGIN_POOL": {
+      "name": "XCSH_ORIGIN_POOL_NAME",
+      "defaultHash": "2b998ca7"
+    },
+    "XCSH_ORIGIN_KIND": {
+      "name": "XCSH_ORIGIN_KIND",
+      "defaultHash": "d804fc0e"
+    },
+    "XCSH_ORIGIN_HOSTNAME": {
+      "name": "XCSH_ORIGIN_HOSTNAME",
+      "defaultHash": "fbbe913c"
+    },
+    "XCSH_ORIGIN_IP": {
+      "name": "XCSH_ORIGIN_IP",
+      "defaultHash": "811c9dc5"
+    },
+    "XCSH_APPLICATION_MARKER": {
+      "name": "XCSH_APPLICATION_MARKER",
+      "defaultHash": "f85e09c3"
+    },
+    "XCSH_ORIGIN_PORT": {
+      "name": "XCSH_ORIGIN_PORT",
+      "defaultHash": "9201aa55"
+    },
+    "XCSH_HC_NAME": {
+      "name": "XCSH_HC_NAME",
+      "defaultHash": "811c9dc5"
+    }
+  },
+  "dns": {
+    "F5XC_API_URL": {
+      "name": "XCSH_API_URL",
+      "defaultHash": "91ee13ff"
+    },
+    "F5XC_API_TOKEN": {
+      "name": "XCSH_API_TOKEN",
+      "defaultHash": "a5a052c0"
+    },
+    "F5XC_DOMAIN": {
+      "name": "XCSH_DNS_ZONE",
+      "defaultHash": "431ceb26"
+    }
+  },
+  "ddos": {
+    "DC_NAME": {
+      "name": "XCSH_DC_NAME",
+      "defaultHash": "750038d3"
+    },
+    "CENTER_1": {
+      "name": "XCSH_CENTER_1",
+      "defaultHash": "cdd26569"
+    },
+    "CENTER_2": {
+      "name": "XCSH_CENTER_2",
+      "defaultHash": "615d4ac1"
+    },
+    "XC_C1_OUTER_V4": {
+      "name": "XCSH_XC_C1_OUTER_V4",
+      "defaultHash": "65b599f9"
+    },
+    "XC_C2_OUTER_V4": {
+      "name": "XCSH_XC_C2_OUTER_V4",
+      "defaultHash": "ebb8ab82"
+    },
+    "XC_C1_OUTER_V6": {
+      "name": "XCSH_XC_C1_OUTER_V6",
+      "defaultHash": "5badb0ec"
+    },
+    "XC_C2_OUTER_V6": {
+      "name": "XCSH_XC_C2_OUTER_V6",
+      "defaultHash": "5eadb5a5"
+    },
+    "BIGIP_A_OUTER_V4": {
+      "name": "XCSH_BIGIP_A_OUTER_V4",
+      "defaultHash": "379da846"
+    },
+    "BIGIP_B_OUTER_V4": {
+      "name": "XCSH_BIGIP_B_OUTER_V4",
+      "defaultHash": "389da9d9"
+    },
+    "BIGIP_A_OUTER_V6": {
+      "name": "XCSH_BIGIP_A_OUTER_V6",
+      "defaultHash": "cfbb70e3"
+    },
+    "BIGIP_B_OUTER_V6": {
+      "name": "XCSH_BIGIP_B_OUTER_V6",
+      "defaultHash": "d0bb7276"
+    },
+    "XC_C1_T1_INNER_V4": {
+      "name": "XCSH_XC_C1_T1_INNER_V4",
+      "defaultHash": "81cf1b07"
+    },
+    "XC_C2_T1_INNER_V4": {
+      "name": "XCSH_XC_C2_T1_INNER_V4",
+      "defaultHash": "7dcf14bb"
+    },
+    "XC_C1_T2_INNER_V4": {
+      "name": "XCSH_XC_C1_T2_INNER_V4",
+      "defaultHash": "79cf0e6f"
+    },
+    "XC_C2_T2_INNER_V4": {
+      "name": "XCSH_XC_C2_T2_INNER_V4",
+      "defaultHash": "8d07d2dc"
+    },
+    "XC_C1_T1_INNER_V6": {
+      "name": "XCSH_XC_C1_T1_INNER_V6",
+      "defaultHash": "430f81ba"
+    },
+    "XC_C2_T1_INNER_V6": {
+      "name": "XCSH_XC_C2_T1_INNER_V6",
+      "defaultHash": "74bf4d25"
+    },
+    "XC_C1_T2_INNER_V6": {
+      "name": "XCSH_XC_C1_T2_INNER_V6",
+      "defaultHash": "4160d21c"
+    },
+    "XC_C2_T2_INNER_V6": {
+      "name": "XCSH_XC_C2_T2_INNER_V6",
+      "defaultHash": "babf67a7"
+    },
+    "BIGIP_C1_T1_INNER_V4": {
+      "name": "XCSH_BIGIP_C1_T1_INNER_V4",
+      "defaultHash": "82cf1c9a"
+    },
+    "BIGIP_C2_T1_INNER_V4": {
+      "name": "XCSH_BIGIP_C2_T1_INNER_V4",
+      "defaultHash": "7ecf164e"
+    },
+    "BIGIP_C1_T2_INNER_V4": {
+      "name": "XCSH_BIGIP_C1_T2_INNER_V4",
+      "defaultHash": "9007d795"
+    },
+    "BIGIP_C2_T2_INNER_V4": {
+      "name": "XCSH_BIGIP_C2_T2_INNER_V4",
+      "defaultHash": "8c07d149"
+    },
+    "BIGIP_C1_T1_INNER_V6": {
+      "name": "XCSH_BIGIP_C1_T1_INNER_V6",
+      "defaultHash": "420f8027"
+    },
+    "BIGIP_C2_T1_INNER_V6": {
+      "name": "XCSH_BIGIP_C2_T1_INNER_V6",
+      "defaultHash": "71bf486c"
+    },
+    "BIGIP_C1_T2_INNER_V6": {
+      "name": "XCSH_BIGIP_C1_T2_INNER_V6",
+      "defaultHash": "4460d6d5"
+    },
+    "BIGIP_C2_T2_INNER_V6": {
+      "name": "XCSH_BIGIP_C2_T2_INNER_V6",
+      "defaultHash": "bbbf693a"
+    },
+    "PROTECTED_CIDR_V4": {
+      "name": "XCSH_PROTECTED_CIDR_V4",
+      "defaultHash": "72d47c52"
+    },
+    "PROTECTED_NET_V4": {
+      "name": "XCSH_PROTECTED_NET_V4",
+      "defaultHash": "06ecbf6b"
+    },
+    "PROTECTED_PREFIX_V6": {
+      "name": "XCSH_PROTECTED_PREFIX_V6",
+      "defaultHash": "a81fa907"
+    },
+    "PROTECTED_NET_V6": {
+      "name": "XCSH_PROTECTED_NET_V6",
+      "defaultHash": "5b9892ce"
+    },
+    "CUSTOMER_ASN": {
+      "name": "XCSH_CUSTOMER_ASN",
+      "defaultHash": "bd241e12"
+    },
+    "F5_XC_ASN": {
+      "name": "XCSH_F5_XC_ASN",
+      "defaultHash": "5d6349b5"
+    },
+    "BGP_PASSWORD": {
+      "name": "XCSH_BGP_PASSWORD",
+      "defaultHash": "d90fc3b1"
+    }
+  },
+  "webapp-api-protection": {
+    "F5XC_API_URL": {
+      "name": "XCSH_API_URL",
+      "defaultHash": "f8e11f96"
+    },
+    "F5XC_API_TOKEN": {
+      "name": "XCSH_API_TOKEN",
+      "defaultHash": "a5a052c0"
+    },
+    "F5XC_NAMESPACE": {
+      "name": "XCSH_NAMESPACE",
+      "defaultHash": "e156ccdb"
+    },
+    "LB_DOMAIN": {
+      "name": "XCSH_DOMAINNAME",
+      "defaultHash": "77479136"
+    }
+  },
+  "traffic-generator": {
+    "TARGET_FQDN": {
+      "name": "XCSH_DOMAINNAME",
+      "defaultHash": "b36d7a05"
+    },
+    "TARGET_ORIGIN_IP": {
+      "name": "XCSH_ORIGIN_IP",
+      "defaultHash": "d4f0faa7"
+    },
+    "TGEN_IP": {
+      "name": "XCSH_TGEN_IP",
+      "defaultHash": "ccdf4625"
+    },
+    "SUBSCRIPTION_ID": {
+      "name": "XCSH_AZURE_SUBSCRIPTION_ID",
+      "defaultHash": "be478ed1"
+    }
+  },
+  "demo-resource-template": {
+    "REPLACE_COMPONENT_NAME": {
+      "name": "XCSH_COMPONENT_NAME",
+      "defaultHash": "c0057a83"
+    },
+    "REPLACE_REPO_NAME": {
+      "name": "XCSH_REPO_NAME",
+      "defaultHash": "c0057a83"
+    }
+  }
+}

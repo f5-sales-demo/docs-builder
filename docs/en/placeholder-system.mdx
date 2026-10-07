@@ -1,211 +1,101 @@
 ---
-title: Placeholder System
-description: Token format, state management, DOM walker, computed values, and how to add new placeholders.
+title: Personalized examples
+description: Select shared fields, author safe templates, and preserve private browser values.
 sidebar:
   order: 2
 ---
 
-The placeholder system lets readers customize IP addresses, ASNs, and other deployment-specific values throughout the documentation. Authors write tokens in their Markdown; the browser replaces them with user-supplied values at runtime.
+The form uses the shared catalog in `src/data/field-catalog.json`. Readers start
+with sanitized examples and their edits follow matching fields across repositories
+on `f5-sales-demo.github.io`.
 
-## Token Format
+## Select fields
 
-Tokens follow the regex pattern:
-
-```text
-x([A-Z][A-Z0-9_]+)x
-```
-
-A token starts and ends with a lowercase `x` and contains an uppercase identifier. For example, `xCUSTOMER_ASNx` references the `CUSTOMER_ASN` placeholder.
-
-The regex is defined in `src/scripts/placeholder-dom.ts`:
-
-```ts
-const PH_REGEX = /x([A-Z][A-Z0-9_]+)x/g;
-```
-
-## Placeholder Definitions
-
-All placeholders are declared in `src/data/placeholders.json`. Each entry has this shape:
+Add a version 2 manifest at `docs/placeholders.json`. Select catalog names;
+common conventions belong in the catalog rather than independent definitions.
 
 ```json
 {
-  "CUSTOMER_ASN": {
-    "type": "text",
-    "default": "64496",
-    "description": "Your public ASN (registered with ARIN/RIR)"
-  }
+  "version": 2,
+  "fields": ["XCSH_API_URL", "XCSH_API_TOKEN", "XCSH_NAMESPACE"],
+  "groups": [
+    {
+      "label": "XC API",
+      "keys": ["XCSH_API_URL", "XCSH_API_TOKEN", "XCSH_NAMESPACE"]
+    }
+  ]
 }
 ```
 
-| Field | Required | Description |
-| --- | --- | --- |
-| `type` | yes | `"text"` for free-form input, `"dropdown"` for select menus |
-| `default` | yes | Initial value shown before the reader changes anything |
-| `description` | yes | Label displayed in the form |
-| `options` | only for dropdown | Array of allowed values |
+Optional `examples` may override guide-specific noncredential defaults.
+Catalog fields define descriptions, input types, examples, credential
+classification and semantic scope. New independent settings need a catalog entry.
+DNS zones, application hostnames and origins have distinct names.
 
-## State Management
+## Author templates
 
-`src/lib/placeholder-store.ts` handles all placeholder state.
+Use `<XCSH_VARIABLE_NAME>` in code, inline code and structured examples.
+Escape the opening angle bracket in ordinary MDX prose as
+`\<XCSH_NAMESPACE>`. Legacy `xXCSH_VARIABLE_NAMEx` remains supported.
+Ordinary `$XCSH_NAMESPACE`, `${XCSH_NAMESPACE}`, arithmetic, command
+substitution and discovered identifiers remain shell expressions.
 
-### Storage
+Wrap runnable blocks in a `div` with `data-xcsh-context="shell"` and a
+space-separated `data-xcsh-fields` list. The browser prepends shell-quoted
+exports and copies the complete displayed block. Include sanitized exports in
+the static setup so Markdown readers can configure a session too.
 
-Values are persisted in `localStorage` under the key `f5xc-placeholders`. The store exposes four functions:
+```md
+<div data-xcsh-context="shell" data-xcsh-fields="XCSH_NAMESPACE">
 
-| Function | Purpose |
-| --- | --- |
-| `getDefaults()` | Returns a map of every placeholder key to its `default` value from JSON |
-| `loadValues()` | Reads from localStorage, falls back to `getDefaults()` |
-| `saveValues(values)` | Writes the current map to localStorage |
-| `clearValues()` | Removes the localStorage entry |
+\`\`\`bash
+printf '%s\n' "$XCSH_NAMESPACE"
+\`\`\`
 
-### Field Groups
-
-`FIELD_GROUPS` organizes placeholder keys into labeled sections for the form UI:
-
-```ts
-export const FIELD_GROUPS: FieldGroup[] = [
-  { label: 'Data Center & Scrubbing Centers', keys: ['DC_NAME', 'CENTER_1', 'CENTER_2'] },
-  { label: 'Protected Prefixes', keys: ['PROTECTED_CIDR_V4', 'PROTECTED_NET_V4', ...] },
-  { label: 'BGP', keys: ['CUSTOMER_ASN', 'F5_XC_ASN', 'BGP_PASSWORD'] },
-  // ... more groups
-];
+</div>
 ```
 
-### Computed Values
+Use `data-xcsh-context="json"` and `"hcl"` for structured templates;
+JSON strings escape quotes, backslashes and control characters, and HCL also
+escapes interpolation introducers. Mermaid labels use encoded entities and
+strict rendering. Highlighted markers can span multiple text nodes.
 
-Some values are derived from user input rather than entered directly. `getComputedValues()` calculates these from lookup tables:
+Keep native tool interfaces such as `TF_VAR_namespace` and map
+`XCSH_NAMESPACE` into them in setup. Use `XCSH_ORIGIN_POOL_NAME` for configured names; Statistics discovers `XCSH_ORIGIN_POOL` from its load balancer. CSD maps the configured field into its existing lifecycle interface.
 
-```ts
-const cidrToMask: Record<string, string> = {
-  '/24 (256 IPs)': '255.255.255.0',
-  '/23 (512 IPs)': '255.255.254.0',
-  // ...
-};
-```
+Query times, graph identities and API
+constants remain calculated or discovered.
 
-Two computed placeholders are produced:
+## Store reader edits
 
-| Computed Key | Derived From | Example |
-| --- | --- | --- |
-| `PROTECTED_MASK_V4` | `PROTECTED_CIDR_V4` via `cidrToMask` lookup | `255.255.255.0` |
-| `PROTECTED_PREFIX_V4` | `PROTECTED_NET_V4` + `PROTECTED_CIDR_V4` via `cidrToShort` | `192.0.2.0/24` |
+`f5-docs-values-v1` holds only explicit noncredential overrides in localStorage.
+Matching edits follow navigation and storage events update other tabs.
+Untouched fields retain their guide examples.
 
-`getAllValues()` merges user-entered values with computed values, giving a complete map for substitution.
+`f5-docs-credentials-v1` holds credentials in sessionStorage. They follow
+repository navigation within one tab. Browser session restore can retain them,
+and tabs opened by another tab can inherit an initial session copy. Clear
+credentials explicitly when finished. Inputs are masked; copying a runnable
+block includes its required credentials.
 
-### Event Emission
+The form never submits values or sends them to a server. Storage failures retain
+edits in memory for the current page. Reset shared values preserves credentials;
+clear credentials preserves noncredential edits.
 
-`emitChange()` dispatches a `placeholder-change` CustomEvent on `document` with the full value map as `detail`:
+Known legacy records are migrated once using recorded original defaults.
+Only actual overrides are promoted. Old credentials and obsolete records are
+removed and credentials require re-entry.
 
-```ts
-export function emitChange(values: Record<string, string>) {
-  document.dispatchEvent(
-    new CustomEvent('placeholder-change', { detail: getAllValues(values) }),
-  );
-}
-```
+## Preserve templates and evidence
 
-This event drives both the DOM span updates and Mermaid re-rendering.
+Wrap historical outputs in `<div data-personalize="off">` with empty lines
+around their code blocks. Preserve measured values, units and capture dates;
+sanitize identifiers independently of personalization.
 
-## React Form Component
+Downloaded scripts use exported configuration. A displayed script source can
+declare required form fields while the download stays byte-identical.
+Static Markdown, progressive machine exports and publication artifacts contain
+only sanitized templates. Browser edits affect the current DOM and clipboard.
 
-`src/components/PlaceholderForm.tsx` provides the editing UI.
-
-- **State**: `useState` initialized from `loadValues()`
-- **On mount**: `useEffect` calls `emitChange()` to trigger the initial DOM substitution
-- **handleChange**: Updates React state, calls `saveValues()` and `emitChange()`
-- **handleReset**: Calls `clearValues()`, resets state to `getDefaults()`, emits change
-- **Rendering**: Iterates `FIELD_GROUPS`, rendering a `<fieldset>` per group. Each key gets either an `<input>` (text type) or `<select>` (dropdown type)
-- **Layout**: The form is wrapped in a `<details>` element, collapsed by default
-
-## Astro Wrapper
-
-`src/components/PlaceholderFormWrapper.astro` connects the React component to the Astro page:
-
-```astro
-<PlaceholderForm client:only="react" />
-
-<script>
-  import '../scripts/placeholder-dom.ts';
-</script>
-```
-
-`client:only="react"` tells Astro to hydrate the component purely on the client (no SSR). The `<script>` tag imports the DOM walker so it runs on every page that includes this wrapper.
-
-The wrapper also injects global CSS for form styling (`.ph-form-wrapper`, `.ph-grid`, `.ph-value`, etc.).
-
-## DOM Walker
-
-`src/scripts/placeholder-dom.ts` handles the client-side token replacement.
-
-### Initial Walk
-
-On page load, `init()` runs:
-
-1. Selects `.sl-markdown-content` as the root (falls back to `document.body`)
-2. Calls `walkTextNodes(root, values)` which uses `document.createTreeWalker` with `NodeFilter.SHOW_TEXT`
-3. For each text node matching the token regex, splits it into a document fragment of plain text nodes and `<span data-ph="KEY" class="ph-value">` elements
-4. Replaces the original text node with the fragment
-
-After the walk, the DOM contains spans with `data-ph` attributes instead of raw tokens.
-
-### Subsequent Updates
-
-When the form emits a `placeholder-change` event, `updateSpans()` runs:
-
-```ts
-document.querySelectorAll<HTMLSpanElement>('span[data-ph]').forEach((span) => {
-  const name = span.getAttribute('data-ph')!;
-  if (values[name] !== undefined) {
-    span.textContent = values[name];
-  }
-});
-```
-
-This avoids re-walking the tree — it directly updates the span text content.
-
-### Event Listeners
-
-The script registers two listeners:
-
-| Event | Handler | Purpose |
-| --- | --- | --- |
-| `placeholder-change` | `handleChange` | Updates spans and re-renders Mermaid diagrams |
-| `astro:page-load` | `init` | Re-walks the DOM after Astro client-side navigation |
-
-## How To: Add a New Placeholder
-
-1. **Add the JSON entry** in `src/data/placeholders.json`:
-
-   ```json
-   "MY_NEW_VALUE": {
-     "type": "text",
-     "default": "example",
-     "description": "Description shown in the form"
-   }
-   ```
-
-2. **Add the key to a field group** in `src/lib/placeholder-store.ts`. Either add it to an existing group's `keys` array or create a new group in `FIELD_GROUPS`.
-
-3. **Use the token in content**: Write `xMY_NEW_VALUEx` in any `.mdx` file. The DOM walker will replace it at runtime.
-
-## How To: Add a Computed Value
-
-Computed values are derived from other placeholders. To add one:
-
-1. Add a lookup table (if needed) in `src/lib/placeholder-store.ts`, following the pattern of `cidrToMask`.
-
-2. Extend `getComputedValues()` to include the new derived key:
-
-   ```ts
-   export function getComputedValues(values: Record<string, string>): Record<string, string> {
-     // ... existing logic
-     return {
-       PROTECTED_MASK_V4: mask,
-       PROTECTED_PREFIX_V4: `${net}${short}`,
-       MY_COMPUTED: derivedValue,  // add here
-     };
-   }
-   ```
-
-3. Use `xMY_COMPUTEDx` in content like any other token. Computed values do not need a `placeholders.json` entry or a field group — they are invisible to the form.
+Run `node --test tests/personalization.test.mjs` and the browser acceptance
+suite before delivery.

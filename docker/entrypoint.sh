@@ -89,6 +89,7 @@ if [ -f /app/src/content/docs/placeholders.json ]; then
   cp /app/src/content/docs/placeholders.json /app/src/data/placeholders.json
   rm /app/src/content/docs/placeholders.json
   export DOCS_MARKDOWN_CONTENT="./src/overrides/MarkdownContent.astro"
+  node /app/docker/validate-form.mjs /app/src/data/placeholders.json
   echo "Placeholder form enabled"
 fi
 

@@ -1,131 +1,84 @@
-import { getAllValues, loadValues } from '../lib/placeholder-store';
+import { renderRunnable, substitute } from '../lib/personalization.mjs';
+import { getAllValues, loadValues, subscribe } from '../lib/placeholder-store';
 
-const PH_REGEX = /x([A-Z][A-Z0-9_]+)x/g;
-
-function substituteText(text: string, values: Record<string, string>): string {
-  return text.replace(PH_REGEX, (match, name) => {
-    return values[name] !== undefined ? values[name] : match;
+const originals = new WeakMap<Node, string>();
+const saved = (node: Node) => {
+  if (!originals.has(node)) originals.set(node, node.textContent ?? '');
+  return originals.get(node) ?? '';
+};
+function update(values: Record<string, string>) {
+  const content = document.querySelector('.sl-markdown-content');
+  if (!content) return;
+  content.querySelectorAll<HTMLElement>('pre').forEach((pre) => {
+    if (pre.closest('[data-personalize="off"]') || pre.closest('.mermaid-container')) return;
+    const code = pre.querySelector('code');
+    if (!code) return;
+    const template = saved(code); // textContent joins split syntax-highlighting spans.
+    const wrapper = pre.closest<HTMLElement>('.expressive-code') ?? pre;
+    const button = wrapper.querySelector<HTMLButtonElement>('button[data-code]');
+    const raw = button ? savedButton(button).replaceAll('\x7f', '\n') : template;
+    const annotation = pre.closest<HTMLElement>('[data-xcsh-context], [data-xcsh-fields]');
+    const required = (annotation?.dataset.xcshFields ?? '').split(/[\s,]+/).filter(Boolean);
+    const context =
+      annotation?.dataset.xcshContext ??
+      (/\b(?:json)\b/.test(pre.dataset.language ?? code.className)
+        ? 'json'
+        : /\b(?:hcl|terraform)\b/.test(pre.dataset.language ?? code.className)
+          ? 'hcl'
+          : /\b(?:bash|sh|shell)\b/.test(pre.dataset.language ?? code.className)
+            ? 'shell'
+            : 'text');
+    const rendered =
+      required.length && context === 'shell' ? renderRunnable(raw, required, values) : substitute(raw, values, context);
+    if (rendered !== raw || code.hasAttribute('data-personalized')) {
+      code.textContent = rendered;
+      code.setAttribute('data-personalized', '');
+    }
+    if (button) button.setAttribute('data-code', rendered.replaceAll('\n', '\x7f'));
   });
-}
-
-function walkTextNodes(root: Node, values: Record<string, string>) {
-  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
-  const nodes: Text[] = [];
-  let node: Node | null = walker.nextNode();
+  // Prose and inline code use text nodes, never HTML interpolation.
+  const walker = document.createTreeWalker(content, NodeFilter.SHOW_TEXT);
+  let node: Node | null;
+  node = walker.nextNode();
   while (node) {
-    if (node.nodeType === Node.TEXT_NODE && PH_REGEX.test(node.textContent || '')) {
-      nodes.push(node as Text);
-    }
-    PH_REGEX.lastIndex = 0;
+    const currentNode = node;
     node = walker.nextNode();
+    const parent = (currentNode as Text).parentElement;
+    if (!parent || parent.closest('pre,script,style,svg,.mermaid-container,[data-personalize="off"]')) continue;
+    const template = saved(currentNode);
+    currentNode.textContent = substitute(template, values, 'text');
   }
-  for (const textNode of nodes) {
-    const original = textNode.textContent || '';
-    const parent = textNode.parentNode;
-    if (!parent) continue;
-
-    const fragment = document.createDocumentFragment();
-    let lastIndex = 0;
-    PH_REGEX.lastIndex = 0;
-    let m: RegExpExecArray | null = PH_REGEX.exec(original);
-    while (m !== null) {
-      if (m.index > lastIndex) {
-        fragment.appendChild(document.createTextNode(original.slice(lastIndex, m.index)));
-      }
-      const span = document.createElement('span');
-      span.setAttribute('data-ph', m[1]);
-      span.className = 'ph-value';
-      span.textContent = values[m[1]] !== undefined ? values[m[1]] : m[0];
-      fragment.appendChild(span);
-      lastIndex = PH_REGEX.lastIndex;
-      m = PH_REGEX.exec(original);
-    }
-    if (lastIndex < original.length) {
-      fragment.appendChild(document.createTextNode(original.slice(lastIndex)));
-    }
-    parent.replaceChild(fragment, textNode);
-  }
+  renderDiagrams(values);
 }
-
-function updateSpans(values: Record<string, string>) {
-  document.querySelectorAll<HTMLSpanElement>('span[data-ph]').forEach((span) => {
-    const name = span.getAttribute('data-ph');
-    if (name && values[name] !== undefined) {
-      span.textContent = values[name];
-    }
-  });
+function savedButton(button: HTMLButtonElement) {
+  if (!button.hasAttribute('data-code-template'))
+    button.setAttribute('data-code-template', button.getAttribute('data-code') ?? '');
+  return button.getAttribute('data-code-template') ?? '';
 }
-
-function updateCopyButtons(values: Record<string, string>) {
-  document.querySelectorAll<HTMLButtonElement>('button[data-code]').forEach((btn) => {
-    if (!btn.hasAttribute('data-code-template')) {
-      btn.setAttribute('data-code-template', btn.getAttribute('data-code') || '');
-    }
-    const template = btn.getAttribute('data-code-template') || '';
-    btn.setAttribute('data-code', substituteText(template, values));
-  });
-}
-
-async function renderMermaidDiagrams(values: Record<string, string>) {
-  const containers = document.querySelectorAll<HTMLElement>('.mermaid-container');
-  if (containers.length === 0) return;
-
+let generation = 0;
+async function renderDiagrams(values: Record<string, string>) {
+  const containers = [...document.querySelectorAll<HTMLElement>('.mermaid-container')].filter(
+    (c) => !c.closest('[data-personalize="off"]'),
+  );
+  if (!containers.length) return;
+  const current = ++generation;
   const mermaid = (await import('https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs')).default;
-  mermaid.initialize({
-    startOnLoad: false,
-    theme: 'default',
-    securityLevel: 'loose',
-    themeVariables: {
-      primaryColor: '#ffffff',
-      primaryBorderColor: '#cccccc',
-      background: '#ffffff',
-      mainBkg: '#ffffff',
-      secondBkg: '#ffffff',
-      tertiaryColor: '#ffffff',
-    },
-  });
-
-  for (const container of containers) {
-    const template = container.getAttribute('data-mermaid-src') || '';
-    const substituted = substituteText(template, values);
-    container.removeAttribute('data-processed');
-    container.innerHTML = '';
+  mermaid.initialize({ startOnLoad: false, securityLevel: 'strict', theme: 'default' });
+  for (const [i, container] of containers.entries()) {
+    const template = container.getAttribute('data-mermaid-src') ?? '';
     try {
-      const { svg } = await mermaid.render(`mermaid-${Math.random().toString(36).slice(2)}`, substituted);
-      container.innerHTML = svg;
-
-      // Force white background on the rendered SVG
-      const svgElement = container.querySelector('svg');
-      if (svgElement) {
-        svgElement.style.backgroundColor = 'white';
-      }
-    } catch (e) {
-      container.textContent = `Diagram error: ${e}`;
+      const { svg } = await mermaid.render('ph-diagram-' + current + '-' + i, substitute(template, values, 'mermaid'));
+      if (current === generation) container.innerHTML = svg;
+    } catch {
+      if (current === generation) container.textContent = 'Diagram unavailable';
     }
   }
 }
-
-function handleChange(e: Event) {
-  const values = (e as CustomEvent).detail as Record<string, string>;
-  updateSpans(values);
-  updateCopyButtons(values);
-  renderMermaidDiagrams(values);
-}
-
 function init() {
-  const values = getAllValues(loadValues());
-  const content = document.querySelector('.sl-markdown-content') || document.body;
-  walkTextNodes(content, values);
-  updateCopyButtons(values);
-  renderMermaidDiagrams(values);
+  update(getAllValues(loadValues()));
 }
-
-document.addEventListener('placeholder-change', handleChange);
-
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', init);
-} else {
-  init();
-}
-
+document.addEventListener('placeholder-change', (event) => update((event as CustomEvent).detail));
+subscribe(init);
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+else init();
 document.addEventListener('astro:page-load', init);

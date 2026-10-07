@@ -1,0 +1,492 @@
+{
+  "XCSH_CSD_DEPLOYMENT_MODE": {
+    "type": "text",
+    "default": "api",
+    "description": "Exclusive resource ownership mode: api or terraform. Choose one ownership mode. Never run the API create/update/delete workflow against resources present in Terraform state.",
+    "credential": false,
+    "scope": "csd-deployment-mode"
+  },
+  "XCSH_API_URL": {
+    "type": "text",
+    "default": "https://example-corp.console.ves.volterra.io",
+    "description": "XC Console API URL",
+    "credential": false,
+    "scope": "tenant-api"
+  },
+  "XCSH_API_TOKEN": {
+    "type": "text",
+    "default": "<XCSH_API_TOKEN>",
+    "description": "XC API token",
+    "credential": true,
+    "scope": "api-token"
+  },
+  "XCSH_EMAIL": {
+    "type": "text",
+    "default": "user@example.com",
+    "description": "CSD notification email",
+    "credential": false,
+    "scope": "email"
+  },
+  "XCSH_NAMESPACE": {
+    "type": "text",
+    "default": "demo-app",
+    "description": "XC namespace",
+    "credential": false,
+    "scope": "namespace"
+  },
+  "XCSH_LB_NAME": {
+    "type": "text",
+    "default": "demo-app",
+    "description": "Load balancer configuration name",
+    "credential": false,
+    "scope": "load-balancer"
+  },
+  "XCSH_DOMAINNAME": {
+    "type": "text",
+    "default": "app.example.com",
+    "description": "Application HTTPS hostname",
+    "credential": false,
+    "scope": "application-hostname"
+  },
+  "XCSH_ROOT_DOMAIN": {
+    "type": "text",
+    "default": "example.com",
+    "description": "Application root domain for CSD",
+    "credential": false,
+    "scope": "application-root-domain"
+  },
+  "XCSH_ORIGIN_KIND": {
+    "type": "text",
+    "default": "public_name",
+    "description": "Selects exactly one origin representation: public_name uses XCSH_ORIGIN_HOSTNAME; public_ip uses XCSH_ORIGIN_IP",
+    "credential": false,
+    "scope": "origin-kind"
+  },
+  "XCSH_ORIGIN_HOSTNAME": {
+    "type": "text",
+    "default": "origin.example.com",
+    "description": "Origin DNS hostname used only when XCSH_ORIGIN_KIND is public_name",
+    "credential": false,
+    "scope": "origin-hostname"
+  },
+  "XCSH_ORIGIN_IP": {
+    "type": "text",
+    "default": "198.51.100.10",
+    "description": "Configured origin public IPv4 address",
+    "credential": false,
+    "scope": "origin-ip"
+  },
+  "XCSH_APPLICATION_MARKER": {
+    "type": "text",
+    "default": "OWASP Juice Shop",
+    "description": "Required application/scenario content marker, independent of origin representation. Non-reference API and Azure scenarios must set a stable, deployment-specific value.",
+    "credential": false,
+    "scope": "application-marker"
+  },
+  "XCSH_ORIGIN_PORT": {
+    "type": "number",
+    "default": "80",
+    "description": "Origin server port; must be an integer from 1 through 65535",
+    "credential": false,
+    "scope": "origin-port"
+  },
+  "XCSH_HC_NAME": {
+    "type": "text",
+    "default": "demo-app-health",
+    "description": "Health check name",
+    "credential": false,
+    "scope": "healthcheck"
+  },
+  "XCSH_DNS_ZONE": {
+    "type": "text",
+    "default": "example.com",
+    "description": "Delegated DNS zone",
+    "credential": false,
+    "scope": "dns-zone"
+  },
+  "XCSH_DC_NAME": {
+    "type": "text",
+    "default": "DC1",
+    "description": "Customer data center name",
+    "credential": false,
+    "scope": "dc-name"
+  },
+  "XCSH_CENTER_1": {
+    "type": "dropdown",
+    "default": "US West (SJC)",
+    "description": "Primary F5 XC DDoS scrubbing center",
+    "credential": false,
+    "scope": "center-1",
+    "options": [
+      "US West (SJC)",
+      "US East (DCA)",
+      "Toronto (YYZ)",
+      "UK (LON)",
+      "Germany (FRA)",
+      "Paris (CDG)",
+      "Asia (SIN)",
+      "Bahrain (BAH)",
+      "Hong Kong (HKG)",
+      "Montreal (YUL)",
+      "Mumbai (BOM)",
+      "Ohio (CMH)",
+      "Sao Paulo (GRU)",
+      "Sydney (SYD)",
+      "Tokyo (TYO)"
+    ]
+  },
+  "XCSH_CENTER_2": {
+    "type": "dropdown",
+    "default": "US East (DCA)",
+    "description": "Secondary F5 XC DDoS scrubbing center",
+    "credential": false,
+    "scope": "center-2",
+    "options": [
+      "US West (SJC)",
+      "US East (DCA)",
+      "Toronto (YYZ)",
+      "UK (LON)",
+      "Germany (FRA)",
+      "Paris (CDG)",
+      "Asia (SIN)",
+      "Bahrain (BAH)",
+      "Hong Kong (HKG)",
+      "Montreal (YUL)",
+      "Mumbai (BOM)",
+      "Ohio (CMH)",
+      "Sao Paulo (GRU)",
+      "Sydney (SYD)",
+      "Tokyo (TYO)"
+    ]
+  },
+  "XCSH_XC_C1_OUTER_V4": {
+    "type": "text",
+    "default": "198.51.100.10",
+    "description": "F5 XC Center 1 outer IPv4",
+    "credential": false,
+    "scope": "xc-c1-outer-v4"
+  },
+  "XCSH_XC_C2_OUTER_V4": {
+    "type": "text",
+    "default": "198.51.100.20",
+    "description": "F5 XC Center 2 outer IPv4",
+    "credential": false,
+    "scope": "xc-c2-outer-v4"
+  },
+  "XCSH_XC_C1_OUTER_V6": {
+    "type": "text",
+    "default": "2001:db8:100::1",
+    "description": "F5 XC Center 1 outer IPv6",
+    "credential": false,
+    "scope": "xc-c1-outer-v6"
+  },
+  "XCSH_XC_C2_OUTER_V6": {
+    "type": "text",
+    "default": "2001:db8:100::2",
+    "description": "F5 XC Center 2 outer IPv6",
+    "credential": false,
+    "scope": "xc-c2-outer-v6"
+  },
+  "XCSH_BIGIP_A_OUTER_V4": {
+    "type": "text",
+    "default": "203.0.113.10",
+    "description": "BIG-IP-A outer self IPv4 (GRE endpoint)",
+    "credential": false,
+    "scope": "bigip-a-outer-v4"
+  },
+  "XCSH_BIGIP_B_OUTER_V4": {
+    "type": "text",
+    "default": "203.0.113.11",
+    "description": "BIG-IP-B outer self IPv4 (GRE endpoint)",
+    "credential": false,
+    "scope": "bigip-b-outer-v4"
+  },
+  "XCSH_BIGIP_A_OUTER_V6": {
+    "type": "text",
+    "default": "2001:db8:200::1",
+    "description": "BIG-IP-A outer self IPv6 (GRE endpoint)",
+    "credential": false,
+    "scope": "bigip-a-outer-v6"
+  },
+  "XCSH_BIGIP_B_OUTER_V6": {
+    "type": "text",
+    "default": "2001:db8:200::2",
+    "description": "BIG-IP-B outer self IPv6 (GRE endpoint)",
+    "credential": false,
+    "scope": "bigip-b-outer-v6"
+  },
+  "XCSH_XC_C1_T1_INNER_V4": {
+    "type": "text",
+    "default": "10.10.10.1",
+    "description": "XC Center 1 tunnel 1 inner IPv4",
+    "credential": false,
+    "scope": "xc-c1-t1-inner-v4"
+  },
+  "XCSH_XC_C2_T1_INNER_V4": {
+    "type": "text",
+    "default": "10.10.10.5",
+    "description": "XC Center 2 tunnel 1 inner IPv4",
+    "credential": false,
+    "scope": "xc-c2-t1-inner-v4"
+  },
+  "XCSH_XC_C1_T2_INNER_V4": {
+    "type": "text",
+    "default": "10.10.10.9",
+    "description": "XC Center 1 tunnel 2 inner IPv4",
+    "credential": false,
+    "scope": "xc-c1-t2-inner-v4"
+  },
+  "XCSH_XC_C2_T2_INNER_V4": {
+    "type": "text",
+    "default": "10.10.10.13",
+    "description": "XC Center 2 tunnel 2 inner IPv4",
+    "credential": false,
+    "scope": "xc-c2-t2-inner-v4"
+  },
+  "XCSH_XC_C1_T1_INNER_V6": {
+    "type": "text",
+    "default": "2001:db8:2b51::1",
+    "description": "XC Center 1 tunnel 1 inner IPv6",
+    "credential": false,
+    "scope": "xc-c1-t1-inner-v6"
+  },
+  "XCSH_XC_C2_T1_INNER_V6": {
+    "type": "text",
+    "default": "2001:db8:2b52::1",
+    "description": "XC Center 2 tunnel 1 inner IPv6",
+    "credential": false,
+    "scope": "xc-c2-t1-inner-v6"
+  },
+  "XCSH_XC_C1_T2_INNER_V6": {
+    "type": "text",
+    "default": "2001:db8:2b53::1",
+    "description": "XC Center 1 tunnel 2 inner IPv6",
+    "credential": false,
+    "scope": "xc-c1-t2-inner-v6"
+  },
+  "XCSH_XC_C2_T2_INNER_V6": {
+    "type": "text",
+    "default": "2001:db8:2b54::1",
+    "description": "XC Center 2 tunnel 2 inner IPv6",
+    "credential": false,
+    "scope": "xc-c2-t2-inner-v6"
+  },
+  "XCSH_BIGIP_C1_T1_INNER_V4": {
+    "type": "text",
+    "default": "10.10.10.2",
+    "description": "BIG-IP-A Center 1 tunnel 1 inner IPv4",
+    "credential": false,
+    "scope": "bigip-c1-t1-inner-v4"
+  },
+  "XCSH_BIGIP_C2_T1_INNER_V4": {
+    "type": "text",
+    "default": "10.10.10.6",
+    "description": "BIG-IP-A Center 2 tunnel 1 inner IPv4",
+    "credential": false,
+    "scope": "bigip-c2-t1-inner-v4"
+  },
+  "XCSH_BIGIP_C1_T2_INNER_V4": {
+    "type": "text",
+    "default": "10.10.10.10",
+    "description": "BIG-IP-B Center 1 tunnel 2 inner IPv4",
+    "credential": false,
+    "scope": "bigip-c1-t2-inner-v4"
+  },
+  "XCSH_BIGIP_C2_T2_INNER_V4": {
+    "type": "text",
+    "default": "10.10.10.14",
+    "description": "BIG-IP-B Center 2 tunnel 2 inner IPv4",
+    "credential": false,
+    "scope": "bigip-c2-t2-inner-v4"
+  },
+  "XCSH_BIGIP_C1_T1_INNER_V6": {
+    "type": "text",
+    "default": "2001:db8:2b51::2",
+    "description": "BIG-IP-A Center 1 tunnel 1 inner IPv6",
+    "credential": false,
+    "scope": "bigip-c1-t1-inner-v6"
+  },
+  "XCSH_BIGIP_C2_T1_INNER_V6": {
+    "type": "text",
+    "default": "2001:db8:2b52::2",
+    "description": "BIG-IP-A Center 2 tunnel 1 inner IPv6",
+    "credential": false,
+    "scope": "bigip-c2-t1-inner-v6"
+  },
+  "XCSH_BIGIP_C1_T2_INNER_V6": {
+    "type": "text",
+    "default": "2001:db8:2b53::2",
+    "description": "BIG-IP-B Center 1 tunnel 2 inner IPv6",
+    "credential": false,
+    "scope": "bigip-c1-t2-inner-v6"
+  },
+  "XCSH_BIGIP_C2_T2_INNER_V6": {
+    "type": "text",
+    "default": "2001:db8:2b54::2",
+    "description": "BIG-IP-B Center 2 tunnel 2 inner IPv6",
+    "credential": false,
+    "scope": "bigip-c2-t2-inner-v6"
+  },
+  "XCSH_PROTECTED_CIDR_V4": {
+    "type": "dropdown",
+    "default": "/24 (256 IPs)",
+    "description": "DDoS-protected IPv4 prefix length",
+    "credential": false,
+    "scope": "protected-cidr-v4",
+    "options": ["/24 (256 IPs)", "/23 (512 IPs)", "/22 (1024 IPs)", "/21 (2048 IPs)"]
+  },
+  "XCSH_PROTECTED_NET_V4": {
+    "type": "text",
+    "default": "192.0.2.0",
+    "description": "DDoS-protected public IPv4 network",
+    "credential": false,
+    "scope": "protected-net-v4"
+  },
+  "XCSH_PROTECTED_PREFIX_V6": {
+    "type": "text",
+    "default": "2001:db8:abcd::/48",
+    "description": "DDoS-protected public IPv6 prefix",
+    "credential": false,
+    "scope": "protected-prefix-v6"
+  },
+  "XCSH_PROTECTED_NET_V6": {
+    "type": "text",
+    "default": "2001:db8:abcd::",
+    "description": "DDoS-protected public IPv6 network",
+    "credential": false,
+    "scope": "protected-net-v6"
+  },
+  "XCSH_CUSTOMER_ASN": {
+    "type": "text",
+    "default": "64496",
+    "description": "Your public ASN (registered with ARIN/RIR)",
+    "credential": false,
+    "scope": "customer-asn"
+  },
+  "XCSH_F5_XC_ASN": {
+    "type": "text",
+    "default": "35280",
+    "description": "F5 Distributed Cloud ASN (provided by SOC)",
+    "credential": false,
+    "scope": "f5-xc-asn"
+  },
+  "XCSH_BGP_PASSWORD": {
+    "type": "text",
+    "default": "<XCSH_BGP_PASSWORD>",
+    "description": "BGP MD5 authentication password",
+    "credential": true,
+    "scope": "bgp-password"
+  },
+  "XCSH_TGEN_IP": {
+    "type": "text",
+    "default": "192.0.2.20",
+    "description": "Traffic generator public IPv4 address",
+    "credential": false,
+    "scope": "generator-ip"
+  },
+  "XCSH_AZURE_SUBSCRIPTION_ID": {
+    "type": "text",
+    "default": "<XCSH_AZURE_SUBSCRIPTION_ID>",
+    "description": "Azure subscription ID",
+    "credential": false,
+    "scope": "azure-subscription"
+  },
+  "XCSH_COMPONENT_NAME": {
+    "type": "text",
+    "default": "example-component",
+    "description": "The component name (lowercase, hyphenated, e.g. example-component)",
+    "credential": false,
+    "scope": "component-name"
+  },
+  "XCSH_REPO_NAME": {
+    "type": "text",
+    "default": "example-component",
+    "description": "The GitHub repository name",
+    "credential": false,
+    "scope": "repo-name"
+  },
+  "XCSH_WAF_NAME": {
+    "type": "text",
+    "default": "demo-app-waf",
+    "description": "Application firewall name",
+    "credential": false,
+    "scope": "app-firewall"
+  },
+  "XCSH_AZURE_REGION": {
+    "type": "text",
+    "default": "eastus2",
+    "description": "Azure region",
+    "credential": false,
+    "scope": "azure-region"
+  },
+  "XCSH_SSH_PUBLIC_KEY_PATH": {
+    "type": "text",
+    "default": "~/.ssh/id_ed25519.pub",
+    "description": "SSH public key path",
+    "credential": false,
+    "scope": "ssh-public-key-path"
+  },
+  "XCSH_DEPLOYER": {
+    "type": "text",
+    "default": "demo-app",
+    "description": "Azure resource deployer",
+    "credential": false,
+    "scope": "deployer"
+  },
+  "XCSH_ENVIRONMENT": {
+    "type": "text",
+    "default": "lab",
+    "description": "Deployment environment",
+    "credential": false,
+    "scope": "environment"
+  },
+  "XCSH_TIMER_NAME": {
+    "type": "text",
+    "default": "demo-app-timer",
+    "description": "Generator VM extension name",
+    "credential": false,
+    "scope": "generator-timer"
+  },
+  "XCSH_OWNER": {
+    "type": "text",
+    "default": "demo-app",
+    "description": "XC owner label",
+    "credential": false,
+    "scope": "owner"
+  },
+  "XCSH_PURPOSE": {
+    "type": "text",
+    "default": "demo-app",
+    "description": "Azure purpose tag",
+    "credential": false,
+    "scope": "purpose"
+  },
+  "XCSH_ORIGIN_POOL_NAME": {
+    "type": "text",
+    "default": "demo-app-origin",
+    "description": "Origin pool name",
+    "credential": false,
+    "scope": "origin-pool"
+  },
+  "XCSH_CSD_TERRAFORM_DIR": {
+    "type": "text",
+    "description": "CSD Terraform working directory",
+    "default": "./terraform/aws",
+    "credential": false,
+    "scope": "csd-terraform-directory"
+  },
+  "XCSH_GENERATOR_TERRAFORM_DIR": {
+    "type": "text",
+    "description": "Traffic generator Terraform working directory",
+    "default": "../traffic-generator/terraform/aws",
+    "credential": false,
+    "scope": "generator-terraform-directory"
+  },
+  "XCSH_RECEIPT_DIR": {
+    "type": "text",
+    "description": "Private local receipt directory",
+    "default": "./private-receipts",
+    "credential": false,
+    "scope": "private-receipts-directory"
+  }
+}
