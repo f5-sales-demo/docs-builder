@@ -7,8 +7,9 @@ import subprocess
 import tempfile
 import unittest
 from pathlib import Path
+from typing import ClassVar
 
-from playwright.sync_api import sync_playwright
+from playwright.sync_api import Browser, Playwright, sync_playwright
 
 BASE = os.environ.get("PERSONALIZATION_URL", "http://127.0.0.1:18765")
 ARTIFACTS = Path(
@@ -28,6 +29,9 @@ CONSUMERS = [
 
 
 class BrowserAcceptance(unittest.TestCase):
+    playwright: ClassVar[Playwright]
+    browser: ClassVar[Browser]
+
     @classmethod
     def setUpClass(cls):
         cls.playwright = sync_playwright().start()
@@ -46,7 +50,7 @@ class BrowserAcceptance(unittest.TestCase):
             permissions=["clipboard-read", "clipboard-write"]
         )
         self.page = self.context.new_page()
-        self.errors = []
+        self.errors: list[str] = []
         self.page.on("pageerror", lambda error: self.errors.append(str(error)))
 
     def tearDown(self):
