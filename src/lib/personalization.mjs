@@ -3,7 +3,22 @@ export const CREDENTIALS_KEY = 'f5-docs-credentials-v1';
 const safeName = /^XCSH_[A-Z][A-Z0-9_]*$/;
 const credentialName = /(?:TOKEN|PASSWORD|SECRET|PRIVATE_KEY|CREDENTIAL)/;
 const own = (o, k) => Object.hasOwn(o, k);
-export function resolveManifest(manifest, catalog) {
+export function resolveManifest(manifest, catalog, aliases = {}) {
+  if (manifest.version === undefined) {
+    const oldFields = manifest.fields ?? manifest;
+    const selected = Array.isArray(oldFields)
+      ? oldFields.map((field) => field.name)
+      : Object.keys(oldFields).filter((name) => name !== 'groups');
+    const canonical = (name) => aliases[name] ?? name;
+    const legacyAliases = Object.fromEntries(selected.map((name) => [name, canonical(name)]));
+    const normalized = {
+      version: 2,
+      fields: selected.map(canonical),
+      groups: manifest.groups?.map((group) => ({ ...group, keys: group.keys.map(canonical) })),
+    };
+    const resolved = resolveManifest(normalized, catalog);
+    return { ...resolved, aliases: legacyAliases };
+  }
   if (manifest.version !== 2 || !Array.isArray(manifest.fields)) throw Error('Expected version 2 field selection');
   const fields = {};
   for (const name of manifest.fields) {
@@ -14,7 +29,7 @@ export function resolveManifest(manifest, catalog) {
   const groups = manifest.groups ?? [{ label: 'Settings', keys: Object.keys(fields) }];
   for (const group of groups)
     for (const name of group.keys) if (!own(fields, name)) throw Error('Unselected group field: ' + name);
-  return { fields, groups };
+  return { fields, groups, aliases: {} };
 }
 function defaultHash(value) {
   let hash = 2166136261;

@@ -160,3 +160,18 @@ test('invalid durable credential values are scrubbed', () => {
   setup(local).load();
   assert.ok(!local.getItem('f5-docs-values-v1').includes('OLD_SECRET'));
 });
+test('legacy schemas normalize during coordinated consumer publication', () => {
+  const aliases = { F5XC_NAMESPACE: 'XCSH_NAMESPACE', TARGET_FQDN: 'XCSH_DOMAINNAME' };
+  for (const old of [
+    {
+      fields: { F5XC_NAMESPACE: { type: 'text', default: 'old-default', description: 'Namespace' } },
+      groups: [{ label: 'API', keys: ['F5XC_NAMESPACE'] }],
+    },
+    { fields: [{ name: 'TARGET_FQDN', label: 'Target', placeholder: 'demo.example.com' }] },
+    { F5XC_NAMESPACE: { description: 'Namespace', example: 'old-default' } },
+  ]) {
+    const result = resolveManifest(old, catalog, aliases);
+    assert.ok(Object.keys(result.fields).length);
+    assert.ok(Object.keys(result.fields).every((k) => k.startsWith('XCSH_')));
+  }
+});
