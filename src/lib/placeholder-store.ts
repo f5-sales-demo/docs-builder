@@ -1,89 +1,49 @@
-import rawPlaceholders from '../data/placeholders.json';
+import catalog from '../data/field-catalog.json';
+import legacy from '../data/legacy-fields.json';
+import manifest from '../data/placeholders.json';
+import { createStore, resolveManifest } from './personalization.mjs';
 
-export type PlaceholderDef = {
-  type: string;
-  default: string;
-  description: string;
-  options?: string[];
-};
-
-export type FieldGroup = {
-  label: string;
-  keys: string[];
-};
-
-// Support both structured { fields, groups } and legacy flat format
-const raw = rawPlaceholders as Record<string, unknown>;
-const defs: Record<string, PlaceholderDef> =
-  (raw.fields as Record<string, PlaceholderDef>) || (rawPlaceholders as Record<string, PlaceholderDef>);
-export const FIELD_GROUPS: FieldGroup[] =
-  (raw.groups as FieldGroup[]) ||
-  (Object.keys(defs).length > 0 ? [{ label: 'Settings', keys: Object.keys(defs) }] : []);
-
-export { defs as placeholderDefs };
-
-function getStorageKey(): string {
-  if (typeof window === 'undefined') return 'f5xc-placeholders';
-  const segment = window.location.pathname.split('/')[1] || 'default';
-  return `f5xc-placeholders-${segment}`;
-}
-
-const cidrToMask: Record<string, string> = {
-  '/24 (256 IPs)': '255.255.255.0',
-  '/23 (512 IPs)': '255.255.254.0',
-  '/22 (1024 IPs)': '255.255.252.0',
-  '/21 (2048 IPs)': '255.255.248.0',
-};
-
-const cidrToShort: Record<string, string> = {
-  '/24 (256 IPs)': '/24',
-  '/23 (512 IPs)': '/23',
-  '/22 (1024 IPs)': '/22',
-  '/21 (2048 IPs)': '/21',
-};
-
-export function getDefaults(): Record<string, string> {
-  const defaults: Record<string, string> = {};
-  for (const [key, def] of Object.entries(defs)) {
-    defaults[key] = def.default;
-  }
-  return defaults;
-}
-
-export function loadValues(): Record<string, string> {
+const definition = resolveManifest(manifest, catalog);
+export const placeholderDefs = definition.fields;
+export const FIELD_GROUPS = definition.groups;
+function storage(kind: 'localStorage' | 'sessionStorage') {
   try {
-    const stored = localStorage.getItem(getStorageKey());
-    if (stored) return JSON.parse(stored);
+    return typeof window === 'undefined' ? undefined : window[kind];
   } catch {
-    /* ignore */
+    return undefined;
   }
-  return getDefaults();
 }
-
-export function saveValues(values: Record<string, string>) {
-  localStorage.setItem(getStorageKey(), JSON.stringify(values));
+const store = createStore(definition, {
+  local: storage('localStorage'),
+  session: storage('sessionStorage'),
+  catalog,
+  legacy,
+});
+export const loadValues = store.load;
+export const setValue = store.set;
+export const clearValues = store.reset;
+export const clearCredentials = store.clearCredentials;
+export function getDefaults(): Record<string, string> {
+  return Object.fromEntries(Object.entries(placeholderDefs).map(([key, def]) => [key, def.default]));
 }
-
-export function clearValues() {
-  localStorage.removeItem(getStorageKey());
-}
-
-export function getComputedValues(values: Record<string, string>): Record<string, string> {
-  if (!defs.PROTECTED_CIDR_V4) return {};
-  const cidr = values.PROTECTED_CIDR_V4 || '/24 (256 IPs)';
-  const mask = cidrToMask[cidr] || '255.255.255.0';
-  const short = cidrToShort[cidr] || '/24';
-  const net = values.PROTECTED_NET_V4 || '192.0.2.0';
+export function getAllValues(values: Record<string, string>): Record<string, string> {
+  const cidr = values.XCSH_PROTECTED_CIDR_V4;
+  if (!cidr) return values;
+  const bits = Math.max(0, Math.min(32, Number(cidr.match(/^\/(\d+)/)?.[1] ?? 24)));
+  const mask = [24, 16, 8, 0].map((shift) => ((bits === 0 ? 0 : 0xffffffff << (32 - bits)) >>> shift) & 255).join('.');
   return {
-    PROTECTED_MASK_V4: mask,
-    PROTECTED_PREFIX_V4: `${net}${short}`,
+    ...values,
+    XCSH_PROTECTED_MASK_V4: mask,
+    XCSH_PROTECTED_PREFIX_V4: values.XCSH_PROTECTED_NET_V4 + '/' + bits,
   };
 }
-
-export function getAllValues(values: Record<string, string>): Record<string, string> {
-  return { ...values, ...getComputedValues(values) };
-}
-
-export function emitChange(values: Record<string, string>) {
+export function emitChange(values = loadValues()) {
   document.dispatchEvent(new CustomEvent('placeholder-change', { detail: getAllValues(values) }));
+}
+export function subscribe(callback: () => void) {
+  const onStorage = (event: StorageEvent) => {
+    if (event.key === 'f5-docs-values-v1' || event.key === 'f5-docs-credentials-v1' || event.key === null) callback();
+  };
+  window.addEventListener('storage', onStorage);
+  return () => window.removeEventListener('storage', onStorage);
 }

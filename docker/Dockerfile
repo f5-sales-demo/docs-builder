@@ -30,7 +30,7 @@ RUN npm run cache:seed && npm ci --legacy-peer-deps --prefer-offline
 # Copy framework code
 COPY . .
 
-RUN npm run test:security
+RUN npm run test:security && npm run test:personalization
 
 # Bake theme config into the image (single source of truth)
 RUN cp node_modules/@f5-sales-demo/docs-theme/astro.config.mjs /app/astro.config.mjs && \
