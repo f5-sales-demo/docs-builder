@@ -467,5 +467,26 @@
     "description": "Origin pool name",
     "credential": false,
     "scope": "origin-pool"
+  },
+  "XCSH_CSD_TERRAFORM_DIR": {
+    "type": "text",
+    "description": "CSD Terraform working directory",
+    "default": "./terraform/aws",
+    "credential": false,
+    "scope": "csd-terraform-directory"
+  },
+  "XCSH_GENERATOR_TERRAFORM_DIR": {
+    "type": "text",
+    "description": "Traffic generator Terraform working directory",
+    "default": "../traffic-generator/terraform/aws",
+    "credential": false,
+    "scope": "generator-terraform-directory"
+  },
+  "XCSH_RECEIPT_DIR": {
+    "type": "text",
+    "description": "Private local receipt directory",
+    "default": "./private-receipts",
+    "credential": false,
+    "scope": "private-receipts-directory"
   }
 }
