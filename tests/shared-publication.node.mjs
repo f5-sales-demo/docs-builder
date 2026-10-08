@@ -36,3 +36,15 @@ test('fails closed for corrupted retained assets', async () => {
     await rm(temp, { recursive: true });
   }
 });
+
+test('keeps standalone HTML assets local and rejects a missing consumer on framework pages', async () => {
+  const temp = await mkdtemp(path.join(tmpdir(), 'shared-html-'));
+  try {
+    await writeFile(path.join(temp, 'demo.html'), '<!doctype html><html><body>Demo asset</body></html>');
+    assert.equal((await verifySharedOutput('f5-sales-demo/custom-responses', temp)).pages, 0);
+    await writeFile(path.join(temp, 'index.html'), '<html><body><h1 data-page-title>Documentation</h1></body></html>');
+    await assert.rejects(() => verifySharedOutput('f5-sales-demo/custom-responses', temp));
+  } finally {
+    await rm(temp, { recursive: true });
+  }
+});

@@ -61,6 +61,7 @@ export async function verifySharedOutput(repository, output) {
     if (file.endsWith('.html')) {
       const html = await readFile(path, 'utf8');
       if (/http-equiv=["']refresh/i.test(html)) continue;
+      if (!html.includes('data-page-title') && !html.includes('starlight__sidebar')) continue;
       if (!html.includes('data-f5-shared-consumer') || !html.includes(`${ROOT}assets/`))
         throw new Error(`Missing shared consumer: ${file}`);
       if (/<astro-island[^>]*component-url="[^"]*(?:MegaMenu|SharedMegaMenu)/.test(html))
