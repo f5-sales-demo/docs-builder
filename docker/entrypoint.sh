@@ -207,6 +207,13 @@ if [ "$MODE" = "dev" ]; then
   exec npx astro dev --host
 fi
 
+# Root owns shared releases. Consumers only emit qualified external references.
+DOCS_SHARED_MODE=$(node /app/docker/shared-publication.mjs prepare "${GITHUB_REPOSITORY:-}" "${SHARED_ASSETS_DIR:-}" /app/public)
+export DOCS_SHARED_MODE
+if [ "$DOCS_SHARED_MODE" != local ]; then
+  rm -f /app/public/favicon.svg
+fi
+
 # Build
 npm run build
 
@@ -215,6 +222,8 @@ if [ "${DOCS_PROFILE:-}" = canonical-provider ]; then
   node /app/docker/compact-publication.mjs /app/dist
   node /app/docker/verify-provider-output.mjs "$CONTENT_DIR" /app/dist
 fi
+
+node /app/docker/shared-publication.mjs verify "${GITHUB_REPOSITORY:-}" /app/dist
 
 # --- PDF Generation (optional) ---
 if [ "$GENERATE_PDF" = "true" ]; then
