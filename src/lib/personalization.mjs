@@ -162,6 +162,7 @@ export function substitute(template, values, context = 'text') {
   let quote = null,
     escaped = false,
     position = 0;
+  const substitutions = [];
   return template.replace(marker, (match, canonical, legacy, offset) => {
     const name = canonical ?? legacy;
     if (!own(values, name)) return match;
@@ -174,6 +175,17 @@ export function substitute(template, values, context = 'text') {
       if (c === '\\' && quote !== "'") {
         escaped = true;
         continue;
+      }
+      if (context === 'shell' && quote !== "'" && c === '$' && template[position + 1] === '(') {
+        substitutions.push({ quote, depth: 1 });
+        quote = null;
+        position++;
+        continue;
+      }
+      if (context === 'shell' && !quote && substitutions.length) {
+        const frame = substitutions.at(-1);
+        if (c === '(') frame.depth++;
+        if (c === ')' && --frame.depth === 0) quote = substitutions.pop().quote;
       }
       if (c === '"' || (context === 'shell' && c === "'")) {
         if (!quote) quote = c;
@@ -201,10 +213,21 @@ export function substitute(template, values, context = 'text') {
     return value;
   });
 }
-export function renderRunnable(template, required, values) {
+export function renderRunnable(template, required, values, { mode = 'legacy', fields = {} } = {}) {
   const names = [...new Set(required)];
   for (const name of names)
     if (!safeName.test(name) || !own(values, name)) throw Error('Missing required configuration: ' + name);
+  if (mode === 'inline') return substitute(template, values, 'shell');
+  if (mode === 'script') {
+    if (!template.startsWith('#!')) throw Error('Script rendering requires a shebang');
+    // Scripts keep runtime expressions, including credentials, authoritative.
+    const settings = names.filter((name) => !fields[name]?.credential && !credentialName.test(name));
+    const exports = settings.map((name) => 'export ' + name + '=' + shellQuote(values[name])).join('\n');
+    const end = template.indexOf('\n');
+    if (end < 0) throw Error('Script shebang must end with a newline');
+    return template.slice(0, end + 1) + (exports ? exports + '\n\n' : '') + template.slice(end + 1);
+  }
+  if (mode !== 'legacy') throw Error('Unknown shell rendering mode: ' + mode);
   const exports = names.map((name) => 'export ' + name + '=' + shellQuote(values[name])).join('\n');
   const nativeOrigin =
     names.includes('XCSH_ORIGIN_POOL_NAME') && /\bXCSH_ORIGIN_POOL\b/.test(template)

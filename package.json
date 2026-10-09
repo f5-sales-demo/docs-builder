@@ -11,7 +11,7 @@
     "test:cache": "node --test tests/cache-seed.test.mjs",
     "test:security": "node --test tests/security-dependencies.test.mjs",
     "test:compact": "node --test tests/compact-publication.test.mjs",
-    "test:personalization": "node --test tests/personalization.test.mjs tests/field-catalog.test.mjs"
+    "test:personalization": "node --test tests/personalization.test.mjs tests/field-catalog.test.mjs tests/statistics-authoring.test.mjs"
   },
   "allowScripts": {
     "esbuild": true,
