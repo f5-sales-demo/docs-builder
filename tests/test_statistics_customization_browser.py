@@ -55,14 +55,20 @@ DISCOVERED = [
     "XCSH_GENERATOR_VM_NAME",
     "XCSH_ORIGIN_IP",
 ]
+DEFAULTS = {}
+if os.environ.get("STATISTICS_DEFAULTS_MANIFEST"):
+    DEFAULTS = json.loads(
+        Path(os.environ["STATISTICS_DEFAULTS_MANIFEST"]).read_text(encoding="utf-8")
+    )["examples"]
 
 
 def check_block(page, block, values: dict[str, str], route):
     """Compare displayed and copied examples and validate their language."""
     code = block.locator("pre code").text_content()
     if block.get_attribute("data-xcsh-render") != "script":
-        for name in values:
-            assert "<" + name + ">" not in code, (route, name)
+        for name, value in values.items():
+            if value and value != "<" + name + ">":
+                assert "<" + name + ">" not in code, (route, name)
     button = block.locator("button[data-code]").first
     button.click()
     assert page.evaluate("navigator.clipboard.readText()") == code, route
@@ -90,7 +96,8 @@ def check_block(page, block, values: dict[str, str], route):
         )
         assert result.returncode == 0, (route, result.stderr)
     if block.get_attribute("data-xcsh-render") == "script":
-        assert values["XCSH_API_TOKEN"] not in code
+        if values["XCSH_API_TOKEN"]:
+            assert values["XCSH_API_TOKEN"] not in code
         assert "export XCSH_API_TOKEN=" not in code
         for name in DISCOVERED:
             assert "export " + name + "=" not in code
@@ -107,12 +114,25 @@ def check_lifecycle(page, route, templates):
     """Verify clearing, reset, reload and navigation preserve template behavior."""
     for name in DISCOVERED:
         page.locator("#ph-" + name).fill("")
+        if DEFAULTS:
+            assert page.locator("#ph-" + name).input_value() == ""
+            for block in page.locator("[data-xcsh-fields]").all():
+                if block.get_attribute("data-xcsh-render") == "script":
+                    continue
+                code = block.locator("pre code").text_content()
+                raw = block.locator("button[data-code-template]").first.get_attribute(
+                    "data-code-template"
+                )
+                if "<" + name + ">" in raw:
+                    assert DEFAULTS[name] in code, (route, name)
+            page.locator("#ph-" + name).blur()
+            assert page.locator("#ph-" + name).input_value() == DEFAULTS[name]
     for block in page.locator("[data-xcsh-fields]").all():
         if block.get_attribute("data-xcsh-render") == "script":
             continue
         code = block.locator("pre code").text_content()
         for name in (block.get_attribute("data-xcsh-fields") or "").split():
-            if name in DISCOVERED:
+            if name in DISCOVERED and not DEFAULTS:
                 assert "<" + name + ">" in code, (route, name)
     page.get_by_role("button", name="Reset shared values", exact=True).click()
     page.get_by_role("button", name="Clear credentials", exact=True).click()
@@ -136,9 +156,53 @@ def check_page(page, route, artifacts, width):
     page.locator("#placeholder-form").wait_for(state="attached")
     page.locator(".ph-form-wrapper > summary").click()
     page.get_by_role("button", name="Reset shared values", exact=True).click()
+    page.get_by_role("button", name="Clear credentials", exact=True).click()
     for name in DISCOVERED:
-        assert page.locator("#ph-" + name).input_value() == ""
-        assert "Leave blank" in page.locator("#ph-hint-" + name).inner_text()
+        assert page.locator("#ph-" + name).input_value() == DEFAULTS.get(name, "")
+        assert ("illustrative default" if DEFAULTS else "Leave blank") in page.locator(
+            "#ph-hint-" + name
+        ).inner_text()
+    if DEFAULTS:
+        assert page.locator("#ph-XCSH_API_TOKEN").input_value() == ""
+        assert (
+            page.locator("#ph-XCSH_AZURE_SUBSCRIPTION_ID").input_value()
+            == "<XCSH_AZURE_SUBSCRIPTION_ID>"
+        )
+        initial = page.locator("pre code").all_text_contents()
+        page.evaluate("""() => localStorage.setItem('f5-docs-values-v1', JSON.stringify({version: 1, values: Object.fromEntries(
+            [...document.querySelectorAll('#placeholder-form input')].filter(e => e.type !== 'password').map(e => [e.id.slice(3), '']))}))""")
+        page.reload()
+        page.locator("#placeholder-form").wait_for(state="attached")
+        assert page.locator("pre code").all_text_contents() == initial
+        page.locator(".ph-form-wrapper > summary").click()
+        values = {
+            field.get_attribute("id").removeprefix("ph-"): field.input_value()
+            for field in page.locator("#placeholder-form input").all()
+        }
+        for block in page.locator("[data-xcsh-context]").all():
+            if block.locator("pre code").count():
+                check_block(page, block, values, route)
+        if not route:
+            setup = page.locator(
+                '[data-xcsh-render="inline"] pre code'
+            ).first.text_content()
+            assert 'export XCSH_API_TOKEN="$XCSH_API_TOKEN"' in setup
+            env = {**os.environ, "XCSH_API_TOKEN": "mock environment token $HOME"}
+            # Execute the repository-owned setup template with a synthetic environment token.
+            result = subprocess.run(  # noqa: S603 -- repository-owned setup and synthetic token
+                ["/usr/bin/bash", "-c", setup + '\nprintf %s "$XCSH_API_TOKEN"'],
+                env=env,
+                text=True,
+                capture_output=True,
+                check=True,
+            )
+            assert result.stdout == env["XCSH_API_TOKEN"]
+        page.locator("#ph-XCSH_LB_NAME").fill("FORM_SENTINEL_INDEPENDENT")
+        assert (
+            page.locator("#ph-XCSH_VIRTUAL_HOST").input_value()
+            == DEFAULTS["XCSH_VIRTUAL_HOST"]
+        )
+        page.get_by_role("button", name="Reset shared values", exact=True).click()
     excluded = page.locator('[data-personalize="off"]').all_text_contents()
     templates = page.locator("pre code").all_text_contents()
     for iteration in range(2):

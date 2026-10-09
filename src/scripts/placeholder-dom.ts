@@ -37,7 +37,7 @@ function update(values: Record<string, string>) {
     const rendered =
       context === 'shell' && (required.length || mode !== 'legacy')
         ? renderRunnable(raw, required, values, { mode, fields: placeholderDefs })
-        : substitute(raw, values, context);
+        : substitute(raw, values, context, placeholderDefs);
     if (rendered !== template || code.hasAttribute('data-personalized')) {
       code.textContent = rendered;
       code.style.display = 'block';
@@ -79,7 +79,7 @@ function update(values: Record<string, string>) {
     const parent = (currentNode as Text).parentElement;
     if (!parent || parent.closest('pre,script,style,svg,.mermaid-container,[data-personalize="off"]')) continue;
     const template = saved(currentNode);
-    currentNode.textContent = substitute(template, values, 'text');
+    currentNode.textContent = substitute(template, values, 'text', placeholderDefs);
   }
   renderDiagrams(values);
 }
@@ -100,7 +100,10 @@ async function renderDiagrams(values: Record<string, string>) {
   for (const [i, container] of containers.entries()) {
     const template = container.getAttribute('data-mermaid-src') ?? '';
     try {
-      const { svg } = await mermaid.render('ph-diagram-' + current + '-' + i, substitute(template, values, 'mermaid'));
+      const { svg } = await mermaid.render(
+        'ph-diagram-' + current + '-' + i,
+        substitute(template, values, 'mermaid', placeholderDefs),
+      );
       if (current === generation) container.innerHTML = svg;
     } catch {
       if (current === generation) container.textContent = 'Diagram unavailable';

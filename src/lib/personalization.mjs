@@ -20,16 +20,37 @@ export function resolveManifest(manifest, catalog, aliases = {}) {
     return { ...resolved, aliases: legacyAliases };
   }
   if (manifest.version !== 2 || !Array.isArray(manifest.fields)) throw Error('Expected version 2 field selection');
+  const behavior = manifest.behavior ?? {};
+  if (!behavior || typeof behavior !== 'object' || Array.isArray(behavior)) throw Error('Invalid manifest behavior');
+  for (const [key, value] of Object.entries(behavior))
+    if (!['fallbackToDefaults', 'environmentToken'].includes(key) || typeof value !== 'boolean')
+      throw Error('Unknown or invalid manifest behavior: ' + key);
   const fields = {};
   for (const name of manifest.fields) {
     if (!safeName.test(name) || !own(catalog, name)) throw Error('Unknown canonical field: ' + name);
     fields[name] = { ...catalog[name], default: String(manifest.examples?.[name] ?? catalog[name].default) };
     if (fields[name].credential) fields[name].default = '<' + name + '>';
+    fields[name].fallbackToDefault = Boolean(behavior.fallbackToDefaults && !fields[name].credential);
+    fields[name].environmentToken = Boolean(behavior.environmentToken && name === 'XCSH_API_TOKEN');
+    if (fields[name].environmentToken) fields[name].default = '';
+    if (fields[name].fallbackToDefault && fields[name].hint)
+      fields[name].hint = fields[name].hint.replace(
+        'Leave blank to retain its placeholder.',
+        'Clear to restore the illustrative default.',
+      );
   }
   const groups = manifest.groups ?? [{ label: 'Settings', keys: Object.keys(fields) }];
   for (const group of groups)
     for (const name of group.keys) if (!own(fields, name)) throw Error('Unselected group field: ' + name);
   return { fields, groups, aliases: {} };
+}
+export function resolveValues(values, fields = {}) {
+  return Object.fromEntries(
+    Object.entries(values).map(([name, value]) => [
+      name,
+      value === '' && fields[name]?.fallbackToDefault ? fields[name].default : value,
+    ]),
+  );
 }
 function defaultHash(value) {
   let hash = 2166136261;
@@ -113,8 +134,11 @@ export function createStore(definition, { local, session, catalog = definition.f
     if (JSON.stringify(original.values) !== JSON.stringify(durable.values)) write(local, VALUES_KEY, durable);
     const transient = clean(read(session, CREDENTIALS_KEY), true);
     const values = { ...durable.values, ...memory.values, ...transient.values, ...memory.credentials };
-    return Object.fromEntries(
-      Object.entries(definition.fields).map(([k, d]) => [k, own(values, k) ? values[k] : d.default]),
+    return resolveValues(
+      Object.fromEntries(
+        Object.entries(definition.fields).map(([k, d]) => [k, own(values, k) ? values[k] : d.default]),
+      ),
+      definition.fields,
     );
   }
   function set(name, value) {
@@ -158,7 +182,8 @@ function stringEscape(value, context) {
   if (context === 'hcl') escaped = escaped.replaceAll('${', () => '$${').replaceAll('%{', () => '%%{');
   return escaped;
 }
-export function substitute(template, values, context = 'text') {
+export function substitute(template, values, context = 'text', fields = {}) {
+  values = resolveValues(values, fields);
   let quote = null,
     escaped = false,
     position = 0;
@@ -194,6 +219,14 @@ export function substitute(template, values, context = 'text') {
     }
     position = offset + match.length;
     const value = String(values[name]);
+    if (value === '' && fields[name]?.environmentToken) {
+      if (context === 'shell') {
+        if (quote === '"') return '$' + name;
+        if (quote === "'") return '\'"$' + name + '"\'';
+        return '"$' + name + '"';
+      }
+      if (context === 'text') return '$' + name;
+    }
     if (canonical && value === '') return match;
     if (context === 'shell') {
       if (quote === "'") {
@@ -215,10 +248,11 @@ export function substitute(template, values, context = 'text') {
   });
 }
 export function renderRunnable(template, required, values, { mode = 'legacy', fields = {} } = {}) {
+  values = resolveValues(values, fields);
   const names = [...new Set(required)];
   for (const name of names)
     if (!safeName.test(name) || !own(values, name)) throw Error('Missing required configuration: ' + name);
-  if (mode === 'inline') return substitute(template, values, 'shell');
+  if (mode === 'inline') return substitute(template, values, 'shell', fields);
   if (mode === 'script') {
     if (!template.startsWith('#!')) throw Error('Script rendering requires a shebang');
     // Scripts keep runtime expressions, including credentials, authoritative.
@@ -235,10 +269,18 @@ export function renderRunnable(template, required, values, { mode = 'legacy', fi
     return template.slice(0, end + 1) + (exports ? exports + '\n\n' : '') + template.slice(end + 1);
   }
   if (mode !== 'legacy') throw Error('Unknown shell rendering mode: ' + mode);
-  const exports = names.map((name) => 'export ' + name + '=' + shellQuote(values[name])).join('\n');
+  const exports = names
+    .map(
+      (name) =>
+        'export ' +
+        name +
+        '=' +
+        (values[name] === '' && fields[name]?.environmentToken ? '"$' + name + '"' : shellQuote(values[name])),
+    )
+    .join('\n');
   const nativeOrigin =
     names.includes('XCSH_ORIGIN_POOL_NAME') && /\bXCSH_ORIGIN_POOL\b/.test(template)
       ? '\nexport XCSH_ORIGIN_POOL="$XCSH_ORIGIN_POOL_NAME"'
       : '';
-  return (exports ? exports + nativeOrigin + '\n\n' : '') + substitute(template, values, 'shell');
+  return (exports ? exports + nativeOrigin + '\n\n' : '') + substitute(template, values, 'shell', fields);
 }
