@@ -49,7 +49,7 @@ function update(values: Record<string, string>) {
       let download = annotation.querySelector<HTMLButtonElement>('button[data-personalized-download]');
       if (!download) {
         download = document.createElement('button');
-        download.className = "ph-reset";
+        download.className = 'ph-reset';
         download.type = 'button';
         download.setAttribute('data-personalized-download', '');
         download.textContent = 'Download personalized script';
