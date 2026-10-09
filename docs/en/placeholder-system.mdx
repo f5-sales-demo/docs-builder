@@ -55,6 +55,41 @@ printf '%s\n' "$XCSH_NAMESPACE"
 </div>
 ```
 
+For commands that embed reader values directly, opt into
+`data-xcsh-render="inline"`. Declare the fields and place explicit placeholders
+at argument positions. This mode substitutes them without adding exports;
+configuration assignments appear once in setup. Runtime variables, command
+substitutions, arithmetic, and jq variables remain expressions.
+
+```md
+<div data-xcsh-context="shell" data-xcsh-render="inline" data-xcsh-fields="XCSH_NAMESPACE">
+
+\`\`\`bash
+jq -nc --arg ns "<XCSH_NAMESPACE>" '{namespace: $ns}'
+\`\`\`
+
+</div>
+```
+
+For a complete executable source, use `data-xcsh-render="script"` with all
+configuration dependencies, including required credentials. Script mode inserts
+shell-quoted noncredential exports immediately after the shebang and preserves
+the original runtime program. Credentials stay environment-provided. Add
+`data-xcsh-download="example-personalized.sh"` and
+`data-xcsh-source-file="assets/scripts/example.sh"` to offer a **Download personalized
+script** button. The browser creates a local Blob from the same original source
+and current settings; it excludes credentials and makes no network request.
+Explain the shared setup/discovery requirement beside the source. Keep the
+canonical script URL and bytes unchanged.
+
+For downloadable scripts, the builder embeds the exact source file as a UTF-8
+payload in the page, including its final newline. The original code payload is authoritative for rendering, clipboard, and
+personalized downloads. It preserves newlines, indentation, continuations, and
+split highlighted placeholders. Existing blocks without a render mode keep their
+current export behavior. Statistics builds check English shell blocks against
+the resolved manifest and report page, line, and block locations for unknown
+fields, unpersonalized inputs, or frozen discovery identifiers.
+
 Use `data-xcsh-context="json"` and `"hcl"` for structured templates;
 JSON strings escape quotes, backslashes and control characters, and HCL also
 escapes interpolation introducers. Mermaid labels use encoded entities and
@@ -95,7 +130,7 @@ sanitize identifiers independently of personalization.
 Downloaded scripts use exported configuration. A displayed script source can
 declare required form fields while the download stays byte-identical.
 Static Markdown, progressive machine exports and publication artifacts contain
-only sanitized templates. Browser edits affect the current DOM and clipboard.
+only sanitized templates. Browser edits affect the current DOM, clipboard, and local personalized downloads.
 
 Run `node --test tests/personalization.test.mjs` and the browser acceptance
 suite before delivery.

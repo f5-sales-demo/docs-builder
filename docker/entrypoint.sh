@@ -89,7 +89,7 @@ if [ -f /app/src/content/docs/placeholders.json ]; then
   cp /app/src/content/docs/placeholders.json /app/src/data/placeholders.json
   rm /app/src/content/docs/placeholders.json
   export DOCS_MARKDOWN_CONTENT="./src/overrides/MarkdownContent.astro"
-  node /app/docker/validate-form.mjs /app/src/data/placeholders.json
+  node /app/docker/validate-form.mjs /app/src/data/placeholders.json /app/src/content/docs "${GITHUB_REPOSITORY:-}"
   echo "Placeholder form enabled"
 fi
 
@@ -223,6 +223,7 @@ if [ "${DOCS_PROFILE:-}" = canonical-provider ]; then
   node /app/docker/verify-provider-output.mjs "$CONTENT_DIR" /app/dist
 fi
 
+node /app/docker/canonical-script-source.mjs /app/src/content/docs /app/dist
 node /app/docker/shared-publication.mjs verify "${GITHUB_REPOSITORY:-}" /app/dist
 
 # --- PDF Generation (optional) ---

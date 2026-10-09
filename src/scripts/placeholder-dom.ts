@@ -1,5 +1,5 @@
 import { renderRunnable, substitute } from '../lib/personalization.mjs';
-import { getAllValues, loadValues, subscribe } from '../lib/placeholder-store';
+import { getAllValues, loadValues, placeholderDefs, subscribe } from '../lib/placeholder-store';
 
 const originals = new WeakMap<Node, string>();
 const saved = (node: Node) => {
@@ -13,11 +13,16 @@ function update(values: Record<string, string>) {
     if (pre.closest('[data-personalize="off"]') || pre.closest('.mermaid-container')) return;
     const code = pre.querySelector('code');
     if (!code) return;
-    const template = saved(code); // textContent joins split syntax-highlighting spans.
+    const template = saved(code);
     const wrapper = pre.closest<HTMLElement>('.expressive-code') ?? pre;
     const button = wrapper.querySelector<HTMLButtonElement>('button[data-code]');
-    const raw = button ? savedButton(button).replaceAll('\x7f', '\n') : template;
-    const annotation = pre.closest<HTMLElement>('[data-xcsh-context], [data-xcsh-fields]');
+    const annotation = pre.closest<HTMLElement>('[data-xcsh-context], [data-xcsh-fields], [data-xcsh-render]');
+    const source = annotation?.dataset.xcshSource;
+    const raw = source
+      ? new TextDecoder().decode(Uint8Array.from(atob(source), (c) => c.charCodeAt(0)))
+      : button
+        ? savedButton(button).replaceAll(String.fromCharCode(127), String.fromCharCode(10))
+        : template;
     const required = (annotation?.dataset.xcshFields ?? '').split(/[\s,]+/).filter(Boolean);
     const context =
       annotation?.dataset.xcshContext ??
@@ -28,13 +33,41 @@ function update(values: Record<string, string>) {
           : /\b(?:bash|sh|shell)\b/.test(pre.dataset.language ?? code.className)
             ? 'shell'
             : 'text');
+    const mode = annotation?.dataset.xcshRender ?? 'legacy';
     const rendered =
-      required.length && context === 'shell' ? renderRunnable(raw, required, values) : substitute(raw, values, context);
-    if (rendered !== raw || code.hasAttribute('data-personalized')) {
+      context === 'shell' && (required.length || mode !== 'legacy')
+        ? renderRunnable(raw, required, values, { mode, fields: placeholderDefs })
+        : substitute(raw, values, context);
+    if (rendered !== template || code.hasAttribute('data-personalized')) {
       code.textContent = rendered;
+      code.style.display = 'block';
+      code.style.whiteSpace = 'pre';
       code.setAttribute('data-personalized', '');
     }
     if (button) button.setAttribute('data-code', rendered.replaceAll('\n', '\x7f'));
+    if (mode === 'script' && annotation?.dataset.xcshDownload) {
+      let download = annotation.querySelector<HTMLButtonElement>('button[data-personalized-download]');
+      if (!download) {
+        download = document.createElement('button');
+        download.className = "ph-reset";
+        download.type = 'button';
+        download.setAttribute('data-personalized-download', '');
+        download.textContent = 'Download personalized script';
+        annotation.append(download);
+      }
+      download.onclick = () => {
+        const source = renderRunnable(raw, required, getAllValues(loadValues()), {
+          mode: 'script',
+          fields: placeholderDefs,
+        });
+        const url = URL.createObjectURL(new Blob([source], { type: 'text/x-shellscript;charset=utf-8' }));
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = annotation.dataset.xcshDownload ?? 'personalized.sh';
+        link.click();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+      };
+    }
   });
   // Prose and inline code use text nodes, never HTML interpolation.
   const walker = document.createTreeWalker(content, NodeFilter.SHOW_TEXT);
