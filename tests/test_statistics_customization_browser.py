@@ -26,8 +26,6 @@ PAGES = [
     "shell-scripts/",
     "troubleshooting/",
     "api-catalog/query-concepts/",
-]
-PAGES += [
     "api-catalog/",
     "api-catalog/api-analytics/",
     "api-catalog/application-security/",
@@ -59,8 +57,132 @@ DISCOVERED = [
 ]
 
 
+def check_block(page, block, values: dict[str, str], route):
+    """Compare displayed and copied examples and validate their language."""
+    code = block.locator("pre code").text_content()
+    if block.get_attribute("data-xcsh-render") != "script":
+        for name in values:
+            assert "<" + name + ">" not in code, (route, name)
+    button = block.locator("button[data-code]").first
+    button.click()
+    assert page.evaluate("navigator.clipboard.readText()") == code, route
+    assert button.get_attribute("data-code").replace(chr(127), "\n") == code
+    kind = block.get_attribute("data-xcsh-context")
+    if kind == "json":
+        raw = button.get_attribute("data-code-template").replace(chr(127), "\n")
+
+        def json_value(match: re.Match[str]) -> str:
+            return json.dumps(values[match[1]])[1:-1]
+
+        expected = re.sub(
+            r"<(XCSH_[A-Z0-9_]+)>",
+            json_value,
+            raw,
+        )
+        assert json.loads(code) == json.loads(expected), route
+    if kind == "shell":
+        result = subprocess.run(
+            ["/usr/bin/bash", "-n"],
+            input=code,
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        assert result.returncode == 0, (route, result.stderr)
+    if block.get_attribute("data-xcsh-render") == "script":
+        assert values["XCSH_API_TOKEN"] not in code
+        assert "export XCSH_API_TOKEN=" not in code
+        for name in DISCOVERED:
+            assert "export " + name + "=" not in code
+        with page.expect_download() as pending:
+            block.get_by_role(
+                "button",
+                name="Download personalized script",
+                exact=True,
+            ).click()
+        assert Path(pending.value.path()).read_text(encoding="utf-8") == code
+
+
+def check_lifecycle(page, route, templates):
+    """Verify clearing, reset, reload and navigation preserve template behavior."""
+    for name in DISCOVERED:
+        page.locator("#ph-" + name).fill("")
+    for block in page.locator("[data-xcsh-fields]").all():
+        if block.get_attribute("data-xcsh-render") == "script":
+            continue
+        code = block.locator("pre code").text_content()
+        for name in (block.get_attribute("data-xcsh-fields") or "").split():
+            if name in DISCOVERED:
+                assert "<" + name + ">" in code, (route, name)
+    page.get_by_role("button", name="Reset shared values", exact=True).click()
+    page.get_by_role("button", name="Clear credentials", exact=True).click()
+    assert page.locator("pre code").all_text_contents() == templates, route
+    assert page.locator("#ph-XCSH_API_TOKEN").get_attribute("type") == "password"
+    page.get_by_role("button", name="Clear credentials", exact=True).click()
+    page.locator("#ph-XCSH_VIRTUAL_HOST").fill("FORM_SENTINEL_RELOAD")
+    page.reload()
+    assert page.locator("#ph-XCSH_VIRTUAL_HOST").input_value() == "FORM_SENTINEL_RELOAD"
+    page.goto(BASE + "/statistics/en/security-events/")
+    assert page.locator("#ph-XCSH_VIRTUAL_HOST").input_value() == "FORM_SENTINEL_RELOAD"
+    assert (
+        "FORM_SENTINEL_RELOAD"
+        in page.locator('[data-xcsh-context="json"]').first.inner_text()
+    )
+
+
+def check_page(page, route, artifacts, width):
+    """Edit every field twice while preserving recorded measurements."""
+    page.goto(BASE + "/statistics/en/" + route)
+    page.locator("#placeholder-form").wait_for(state="attached")
+    page.locator(".ph-form-wrapper > summary").click()
+    page.get_by_role("button", name="Reset shared values", exact=True).click()
+    for name in DISCOVERED:
+        assert page.locator("#ph-" + name).input_value() == ""
+        assert "Leave blank" in page.locator("#ph-hint-" + name).inner_text()
+    excluded = page.locator('[data-personalize="off"]').all_text_contents()
+    templates = page.locator("pre code").all_text_contents()
+    for iteration in range(2):
+        values = {}
+        for field in page.locator("#placeholder-form input").all():
+            name = field.get_attribute("id").removeprefix("ph-")
+            value = (
+                f"FORM_SENTINEL_{iteration}_"
+                + name
+                + ' O\'Brien "quote" \\ $HOME $(id) `id` <tag>\nnext'
+            )
+            field.fill(value)
+            values[name] = field.input_value()
+        for block in page.locator("[data-xcsh-context]").all():
+            if block.locator("pre code").count():
+                check_block(page, block, values, route)
+        assert page.locator('[data-personalize="off"]').all_text_contents() == excluded
+    page.screenshot(
+        path=str(
+            artifacts
+            / (str(width) + "-" + (route.replace("/", "-") or "overview") + ".png")
+        )
+    )
+    check_lifecycle(page, route, templates)
+
+
+def observe(page, errors, requests):
+    """Attach per-context browser error and request collectors."""
+
+    def record_error(error):
+        errors.append(str(error))
+
+    def record_request(request):
+        requests.append(request.url + (request.post_data or ""))
+
+    page.on("pageerror", record_error)
+    page.on("request", record_request)
+
+
 class StatisticsCustomization(unittest.TestCase):
+    """Accept each Statistics guide in desktop and mobile viewports."""
+
     def test_all_guides_and_form_lifecycle(self):
+        """Exercise forms, clipboard, scripts and network privacy."""
         artifacts = Path(
             os.environ.get("PERSONALIZATION_ARTIFACTS", tempfile.mkdtemp())
         )
@@ -75,161 +197,22 @@ class StatisticsCustomization(unittest.TestCase):
                     permissions=["clipboard-read", "clipboard-write"],
                 )
                 page = context.new_page()
-                errors, requests = [], []
-                page.on(
-                    "pageerror", lambda error, errors=errors: errors.append(str(error))
-                )
-                page.on(
-                    "request",
-                    lambda req, requests=requests: requests.append(
-                        req.url + (req.post_data or "")
-                    ),
-                )
+                errors: list[str] = []
+                requests: list[str] = []
+
+                observe(page, errors, requests)
                 for route in PAGES:
-                    page.goto(BASE + "/statistics/en/" + route)
-                    page.locator("#placeholder-form").wait_for(state="attached")
-                    page.locator(".ph-form-wrapper > summary").click()
-                    page.get_by_role(
-                        "button", name="Reset shared values", exact=True
-                    ).click()
-                    for name in DISCOVERED:
-                        assert page.locator("#ph-" + name).input_value() == ""
-                        assert (
-                            "Leave blank"
-                            in page.locator("#ph-hint-" + name).inner_text()
-                        )
-                    excluded = page.locator(
-                        '[data-personalize="off"]'
-                    ).all_text_contents()
-                    templates = page.locator("pre code").all_text_contents()
-                    for iteration in range(2):
-                        values = {}
-                        for field in page.locator("#placeholder-form input").all():
-                            name = field.get_attribute("id").removeprefix("ph-")
-                            value = (
-                                f"FORM_SENTINEL_{iteration}_"
-                                + name
-                                + ' O\'Brien "quote" \\ $HOME $(id) `id` <tag>\nnext'
-                            )
-                            field.fill(value)
-                            values[name] = field.input_value()
-                        for block in page.locator("[data-xcsh-context]").all():
-                            if not block.locator("pre code").count():
-                                continue
-                            code = block.locator("pre code").text_content()
-                            if block.get_attribute("data-xcsh-render") != "script":
-                                for name in values:
-                                    assert "<" + name + ">" not in code, (route, name)
-                            button = block.locator("button[data-code]").first
-                            button.click()
-                            assert (
-                                page.evaluate("navigator.clipboard.readText()") == code
-                            ), route
-                            assert (
-                                button.get_attribute("data-code").replace(
-                                    chr(127), "\n"
-                                )
-                                == code
-                            )
-                            kind = block.get_attribute("data-xcsh-context")
-                            if kind == "json":
-                                raw = button.get_attribute(
-                                    "data-code-template"
-                                ).replace(chr(127), "\n")
-                                expected = re.sub(
-                                    r"<(XCSH_[A-Z0-9_]+)>",
-                                    lambda m, values=values: json.dumps(values[m[1]])[
-                                        1:-1
-                                    ],
-                                    raw,
-                                )
-                                assert json.loads(code) == json.loads(expected), route
-                            if kind == "shell":
-                                result = subprocess.run(
-                                    ["/usr/bin/bash", "-n"],
-                                    input=code,
-                                    text=True,
-                                    capture_output=True,
-                                    check=False,
-                                )
-                                assert result.returncode == 0, (route, result.stderr)
-                            if block.get_attribute("data-xcsh-render") == "script":
-                                assert values["XCSH_API_TOKEN"] not in code
-                                assert "export XCSH_API_TOKEN=" not in code
-                                for name in DISCOVERED:
-                                    assert "export " + name + "=" not in code
-                                with page.expect_download() as pending:
-                                    block.get_by_role(
-                                        "button",
-                                        name="Download personalized script",
-                                        exact=True,
-                                    ).click()
-                                assert Path(pending.value.path()).read_text() == code
-                        assert (
-                            page.locator('[data-personalize="off"]').all_text_contents()
-                            == excluded
-                        )
-                    page.screenshot(
-                        path=str(
-                            artifacts
-                            / (
-                                str(width)
-                                + "-"
-                                + (route.replace("/", "-") or "overview")
-                                + ".png"
-                            )
-                        )
-                    )
-                    for name in DISCOVERED:
-                        page.locator("#ph-" + name).fill("")
-                    for block in page.locator("[data-xcsh-fields]").all():
-                        if block.get_attribute("data-xcsh-render") == "script":
-                            continue
-                        code = block.locator("pre code").text_content()
-                        for name in (
-                            block.get_attribute("data-xcsh-fields") or ""
-                        ).split():
-                            if name in DISCOVERED:
-                                assert "<" + name + ">" in code, (route, name)
-                    page.get_by_role(
-                        "button", name="Reset shared values", exact=True
-                    ).click()
-                    page.get_by_role(
-                        "button", name="Clear credentials", exact=True
-                    ).click()
-                    assert page.locator("pre code").all_text_contents() == templates, (
-                        route
-                    )
-                    assert (
-                        page.locator("#ph-XCSH_API_TOKEN").get_attribute("type")
-                        == "password"
-                    )
-                    page.get_by_role(
-                        "button", name="Clear credentials", exact=True
-                    ).click()
-                    page.locator("#ph-XCSH_VIRTUAL_HOST").fill("FORM_SENTINEL_RELOAD")
-                    page.reload()
-                    assert (
-                        page.locator("#ph-XCSH_VIRTUAL_HOST").input_value()
-                        == "FORM_SENTINEL_RELOAD"
-                    )
-                    page.goto(BASE + "/statistics/en/security-events/")
-                    assert (
-                        page.locator("#ph-XCSH_VIRTUAL_HOST").input_value()
-                        == "FORM_SENTINEL_RELOAD"
-                    )
-                    assert (
-                        "FORM_SENTINEL_RELOAD"
-                        in page.locator('[data-xcsh-context="json"]').first.inner_text()
-                    )
+                    check_page(page, route, artifacts, width)
                 for asset in [
                     "llms-full.txt",
                     "llms.txt",
                     "assets/scripts/get-stats.sh",
                     "assets/scripts/simple-stats.sh",
                 ]:
-                    body = context.request.get(BASE + "/statistics/" + asset).text()
-                    assert "FORM_SENTINEL" not in body
+                    assert (
+                        "FORM_SENTINEL"
+                        not in context.request.get(BASE + "/statistics/" + asset).text()
+                    )
                 assert all("FORM_SENTINEL" not in request for request in requests), (
                     requests
                 )
