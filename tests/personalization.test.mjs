@@ -1,6 +1,26 @@
 import assert from 'node:assert/strict';
 import * as requireChildProcess from 'node:child_process';
 import test from 'node:test';
+
+test('cleared canonical identifiers retain placeholders in every context', () => {
+  for (const context of ['text', 'json', 'hcl', 'shell'])
+    assert.equal(substitute('"<XCSH_NAMESPACE>"', { XCSH_NAMESPACE: '' }, context), '"<XCSH_NAMESPACE>"');
+});
+
+test('script discovery stays authoritative when identifiers are selected in the form', () => {
+  const source = '#!/bin/bash\nXCSH_GRAPH_SOURCE="$(discover)"\nprintf "%s" "$XCSH_VIRTUAL_HOST"\n';
+  const values = { XCSH_GRAPH_SOURCE: 'pasted-source', XCSH_VIRTUAL_HOST: 'pasted-host' };
+  assert.equal(
+    renderRunnable(source, Object.keys(values), values, {
+      mode: 'script',
+      fields: {
+        XCSH_VIRTUAL_HOST: { discovered: true },
+      },
+    }),
+    source,
+  );
+});
+
 import { createStore, renderRunnable, resolveManifest, shellQuote, substitute } from '../src/lib/personalization.mjs';
 
 const catalog = {

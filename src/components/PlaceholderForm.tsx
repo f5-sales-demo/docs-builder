@@ -35,6 +35,7 @@ export default function PlaceholderForm() {
         {FIELD_GROUPS.map((group) => (
           <fieldset key={group.label}>
             <legend>{group.label}</legend>
+            {group.description && <p>{group.description}</p>}
             <div className="ph-grid">
               {group.keys.map((key: string) => {
                 const def = placeholderDefs[key];
@@ -62,6 +63,8 @@ export default function PlaceholderForm() {
                         type={def.credential ? 'password' : def.type === 'number' ? 'number' : 'text'}
                         autoComplete="off"
                         spellCheck={false}
+                        placeholder={'<' + key + '>'}
+                        aria-describedby={def.hint ? 'ph-hint-' + key : undefined}
                         value={values[key] ?? def.default}
                         onChange={(e) => {
                           setValue(key, e.target.value);
@@ -69,6 +72,7 @@ export default function PlaceholderForm() {
                         }}
                       />
                     )}
+                    {def.hint && <span id={'ph-hint-' + key}>{def.hint}</span>}
                   </label>
                 );
               })}

@@ -74,7 +74,8 @@
     "default": "198.51.100.10",
     "description": "Configured origin public IPv4 address",
     "credential": false,
-    "scope": "origin-ip"
+    "scope": "origin-ip",
+    "hint": "Paste the configured public IP from Origin performance \u2192 Match the origin graph identity. Leave blank to retain its placeholder."
   },
   "XCSH_APPLICATION_MARKER": {
     "type": "text",
@@ -488,5 +489,86 @@
     "default": "./private-receipts",
     "credential": false,
     "scope": "private-receipts-directory"
+  },
+  "XCSH_VIRTUAL_HOST": {
+    "type": "text",
+    "default": "",
+    "description": "Telemetry virtual host",
+    "credential": false,
+    "scope": "virtual-host",
+    "discovered": true,
+    "hint": "Paste the unique virtual host from Query reference \u2192 Find the telemetry virtual host. Leave blank to retain its placeholder."
+  },
+  "XCSH_APP_TYPE": {
+    "type": "text",
+    "default": "",
+    "description": "Application type",
+    "credential": false,
+    "scope": "app-type",
+    "discovered": true,
+    "hint": "Paste the exact ves.io/app_type label from Query reference \u2192 Read the load balancer identifiers. Leave blank to retain its placeholder."
+  },
+  "XCSH_GRAPH_SOURCE": {
+    "type": "text",
+    "default": "",
+    "description": "Graph source service",
+    "credential": false,
+    "scope": "graph-source",
+    "discovered": true,
+    "hint": "Paste source from Origin performance \u2192 Match the origin graph identity. Leave blank to retain its placeholder."
+  },
+  "XCSH_GRAPH_DESTINATION": {
+    "type": "text",
+    "default": "",
+    "description": "Graph destination service",
+    "credential": false,
+    "scope": "graph-destination",
+    "discovered": true,
+    "hint": "Paste destination from Origin performance \u2192 Match the origin graph identity; include the S: prefix. Leave blank to retain its placeholder."
+  },
+  "XCSH_API_ENDPOINT_1": {
+    "type": "text",
+    "default": "",
+    "description": "Discovered API endpoint 1",
+    "credential": false,
+    "scope": "api-endpoint-1",
+    "discovered": true,
+    "hint": "Paste apiep_url from API activity \u2192 Find the busiest endpoints. Leave blank to retain its placeholder."
+  },
+  "XCSH_API_ENDPOINT_2": {
+    "type": "text",
+    "default": "",
+    "description": "Discovered API endpoint 2",
+    "credential": false,
+    "scope": "api-endpoint-2",
+    "discovered": true,
+    "hint": "Paste the second apiep_url from API activity \u2192 Find the busiest endpoints. Leave blank to retain its placeholder."
+  },
+  "XCSH_API_ENDPOINT_3": {
+    "type": "text",
+    "default": "",
+    "description": "Discovered API endpoint 3",
+    "credential": false,
+    "scope": "api-endpoint-3",
+    "discovered": true,
+    "hint": "Paste the third apiep_url from API activity \u2192 Find the busiest endpoints. Leave blank to retain its placeholder."
+  },
+  "XCSH_ORIGIN_VM_NAME": {
+    "type": "text",
+    "default": "",
+    "description": "Origin VM name",
+    "credential": false,
+    "scope": "origin-vm-name",
+    "discovered": true,
+    "hint": "Paste origin_vm_name from the reviewed Terraform outputs. Leave blank to retain its placeholder."
+  },
+  "XCSH_GENERATOR_VM_NAME": {
+    "type": "text",
+    "default": "",
+    "description": "Generator VM name",
+    "credential": false,
+    "scope": "generator-vm-name",
+    "discovered": true,
+    "hint": "Paste generator_vm_name from the reviewed Terraform outputs. Leave blank to retain its placeholder."
   }
 }
