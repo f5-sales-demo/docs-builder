@@ -194,6 +194,7 @@ export function substitute(template, values, context = 'text') {
     }
     position = offset + match.length;
     const value = String(values[name]);
+    if (canonical && value === '') return match;
     if (context === 'shell') {
       if (quote === "'") {
         // A single-quoted shell argument may itself contain a JSON document.
@@ -221,7 +222,13 @@ export function renderRunnable(template, required, values, { mode = 'legacy', fi
   if (mode === 'script') {
     if (!template.startsWith('#!')) throw Error('Script rendering requires a shebang');
     // Scripts keep runtime expressions, including credentials, authoritative.
-    const settings = names.filter((name) => !fields[name]?.credential && !credentialName.test(name));
+    const settings = names.filter(
+      (name) =>
+        !fields[name]?.credential &&
+        !fields[name]?.discovered &&
+        !credentialName.test(name) &&
+        !new RegExp('^\\s*(?:export\\s+)?' + name + '=', 'm').test(template),
+    );
     const exports = settings.map((name) => 'export ' + name + '=' + shellQuote(values[name])).join('\n');
     const end = template.indexOf('\n');
     if (end < 0) throw Error('Script shebang must end with a newline');

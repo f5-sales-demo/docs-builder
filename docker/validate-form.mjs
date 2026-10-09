@@ -10,18 +10,26 @@ const aliases = Object.assign(
     Object.fromEntries(Object.entries(fields).map(([name, field]) => [name, field.name])),
   ),
 );
-const definition = resolveManifest(JSON.parse(fs.readFileSync(process.argv[2], 'utf8')), catalog, aliases);
+const manifest = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'));
+const definition = resolveManifest(manifest, catalog, aliases);
 const root = process.argv[3];
 const repo = (process.argv[4] ?? '').split('/').at(-1);
-if (root && repo === 'statistics') validateStatistics(root, definition.fields);
+if (root && repo === 'statistics')
+  validateStatistics(root, definition.fields, manifest.statisticsAuthoringVersion === 2);
 
-function validateStatistics(root, fields) {
+function validateStatistics(root, fields, strict) {
   const failures = [];
   const attribute = (tag, name) => tag.match(new RegExp(name + '="([^"]*)"'))?.[1];
-  for (const file of fs
-    .readdirSync(path.join(root, 'en'))
-    .filter((f) => /\.mdx?$/.test(f))
-    .sort()) {
+  const pages = (directory) =>
+    fs.readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
+      const file = path.join(directory, entry.name);
+      return entry.isDirectory()
+        ? pages(file)
+        : /\.mdx?$/.test(file)
+          ? [path.relative(path.join(root, 'en'), file)]
+          : [];
+    });
+  for (const file of pages(path.join(root, 'en')).sort()) {
     const lines = fs.readFileSync(path.join(root, 'en', file), 'utf8').split('\n');
     const stack = [];
     let block = 0;
@@ -29,24 +37,38 @@ function validateStatistics(root, fields) {
       const line = lines[i];
       if (/^\s*<div\b/.test(line)) stack.push(line);
       if (/^\s*<\/div>/.test(line)) stack.pop();
-      const fence = line.match(/^\s*```(\w+)(.*)$/);
-      if (!fence) continue;
+      const tag = [...stack].reverse().find((s) => /data-xcsh-(?:fields|context|render)/.test(s)) ?? '';
+      const required = (attribute(tag, 'data-xcsh-fields') ?? '').split(/[\s,]+/).filter(Boolean);
+      const excluded = stack.some((s) => attribute(s, 'data-personalize') === 'off');
+      const checkMarkers = (code, location, structured = false) => {
+        if (!strict) return;
+        for (const name of required)
+          if (!Object.hasOwn(fields, name)) failures.push(location + ': Unselected configuration field: ' + name);
+        for (const match of code.matchAll(/<(XCSH_[A-Z][A-Z0-9_]*)>/g)) {
+          const name = match[1];
+          if (!Object.hasOwn(fields, name)) failures.push(location + ': Unknown or unselected placeholder: ' + name);
+          if (excluded) failures.push(location + ': Identity placeholder inside personalization exclusion: ' + name);
+          if (structured && !required.includes(name)) failures.push(location + ': Undeclared form dependency: ' + name);
+        }
+      };
+      const fence = line.match(/^\s*(`{3,}|~{3,})([\w-]*)(.*)$/);
+      if (!fence) {
+        checkMarkers(line, `${file}:${i + 1}`);
+        continue;
+      }
       const start = i + 1;
       block++;
       const source = [];
-      while (++i < lines.length && !/^\s*```\s*$/.test(lines[i])) source.push(lines[i]);
-      if (!['bash', 'sh', 'shell'].includes(fence[1]) || stack.some((s) => attribute(s, 'data-personalize') === 'off'))
-        continue;
+      while (++i < lines.length && !new RegExp('^\\s*' + fence[1] + '\\s*$').test(lines[i])) source.push(lines[i]);
       const location = `${file}:${start} block ${block}`;
       const fail = (message) => failures.push(location + ': ' + message);
-      const tag = [...stack].reverse().find((s) => /data-xcsh-(?:fields|context|render)/.test(s)) ?? '';
-      const required = (attribute(tag, 'data-xcsh-fields') ?? '').split(/[\s,]+/).filter(Boolean);
       const mode = attribute(tag, 'data-xcsh-render');
-      for (const name of required) if (!Object.hasOwn(fields, name)) fail('Unselected configuration field: ' + name);
       let code = source.join('\n');
-      const imported = fence[2].match(/\bfile=([^\s]+)/)?.[1];
+      checkMarkers(code, location, true);
+      if (!['bash', 'sh', 'shell'].includes(fence[2]) || excluded) continue;
+      const imported = fence[3].match(/\bfile=([^\s]+)/)?.[1];
       if (imported) {
-        const script = path.resolve(root, 'en', imported);
+        const script = path.resolve(root, 'en', path.dirname(file), imported);
         if (!script.startsWith(path.resolve(root) + path.sep)) {
           fail('Script source must belong to content root');
           continue;
@@ -59,8 +81,9 @@ function validateStatistics(root, fields) {
         // Script sources remain runtime programs; dynamic placeholders would freeze discovery.
         if (/<XCSH_[A-Z0-9_]+>/.test(code)) fail('Script source must retain runtime expressions');
       } else {
+        const assigned = new Set([...code.matchAll(/^\s*(?:export\s+)?(XCSH_[A-Z0-9_]+)=/gm)].map((m) => m[1]));
         for (const name of Object.keys(fields)) {
-          if (new RegExp('\\$\\{' + name + '(?:\\}|[^A-Z0-9_])|\\$' + name + '\\b').test(code))
+          if (!assigned.has(name) && new RegExp('\\$\\{' + name + '(?:\\}|[^A-Z0-9_])|\\$' + name + '\\b').test(code))
             fail('Configured input must use explicit placeholder: ' + name);
           if (code.includes('<' + name + '>') && (!required.includes(name) || mode !== 'inline'))
             fail('Placeholder requires inline rendering and declared field: ' + name);
@@ -70,5 +93,5 @@ function validateStatistics(root, fields) {
       }
     }
   }
-  if (failures.length) throw Error('Statistics shell authoring failed:\n' + failures.join('\n'));
+  if (failures.length) throw Error('Statistics authoring failed:\n' + failures.join('\n'));
 }
