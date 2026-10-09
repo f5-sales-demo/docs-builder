@@ -1,7 +1,7 @@
 {
   "name": "docs-builder",
   "type": "module",
-  "version": "1.6.1",
+  "version": "1.7.0",
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",
@@ -19,7 +19,7 @@
     "vue-demi": true
   },
   "dependencies": {
-    "@astrojs/markdown-remark": ">=7.2.4",
+    "@astrojs/markdown-remark": "7.2.4",
     "@astrojs/react": "^6.0.4",
     "@astrojs/starlight": "0.41.9",
     "@f5-sales-demo/docs-theme": "file:vendor/npm/docs-theme-4.12.0.tgz",
@@ -35,6 +35,7 @@
     "@f5-sales-demo/icons-phosphor": "*",
     "@f5-sales-demo/icons-simple-icons": "*",
     "@f5-sales-demo/icons-tabler": "*",
+    "@f5-sales-demo/starlight-llms-txt": "file:vendor/npm/starlight-llms-txt-2.4.0.tgz",
     "@hashicorp/flight-icons": "^5.1.0",
     "@iconify-json/carbon": "^1.2.25",
     "@iconify-json/lucide": "^1.2.126",
@@ -47,16 +48,15 @@
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.5",
     "astro": "7.2.8",
+    "braces": "file:vendor/security/f5-sales-demo-braces-security-3.0.3-f5.1.tgz",
+    "http-cache-semantics": "file:vendor/security/f5-sales-demo-http-cache-semantics-security-4.2.0-f5.2.tgz",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "sharp": "^0.35.4",
     "starlight-openapi": "^0.26.1",
     "unist-util-visit": "^5.1.0",
     "unocss": "^66.8.1",
-    "vite": "^8.3.1",
-    "braces": "file:vendor/security/f5-sales-demo-braces-security-3.0.3-f5.1.tgz",
-    "http-cache-semantics": "file:vendor/security/f5-sales-demo-http-cache-semantics-security-4.2.0-f5.2.tgz",
-    "@f5-sales-demo/starlight-llms-txt": "file:vendor/npm/starlight-llms-txt-2.3.3.tgz"
+    "vite": "^8.3.1"
   },
   "overrides": {
     "dompurify": "^3.4.0",

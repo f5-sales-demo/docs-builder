@@ -16,8 +16,8 @@ entrypoint = open(sys.argv[1], encoding="utf-8").read()
 workflow = yaml.safe_load(open(sys.argv[2], encoding="utf-8"))
 package = json.load(open(sys.argv[3], encoding="utf-8"))
 
-if package.get("version") != "1.6.1":
-    raise SystemExit("docs-builder package version must be 1.6.1")
+if package.get("version") != "1.7.0":
+    raise SystemExit("docs-builder package version must be 1.7.0")
 if "vite" not in package.get("dependencies", {}):
     raise SystemExit("docs-builder must install Vite explicitly for the container runtime")
 for required in ("MACHINE_CORPUS_DIR", "/app/public/snapshot", "manifest.json", "SHA256SUMS"):
@@ -192,6 +192,9 @@ checksums = "".join(
     for path in members
 )
 (root / "SHA256SUMS").write_text(checksums, encoding="utf-8")
+(root / ".enrichment").mkdir()
+(root / ".enrichment/private.json").write_text("PRIVATE_ENRICHMENT_EVIDENCE")
+(root / "enrichment-state.json").write_text("PRIVATE_ENRICHMENT_STATE")
 PY
 
 run_builder() {
@@ -232,6 +235,8 @@ test ! -e "$OUTPUT_ONE/source-a/guide/index.html"
 test ! -e "$OUTPUT_ONE/fr/llms.txt"
 test -f "$OUTPUT_ONE/snapshot/manifest.json"
 test -f "$OUTPUT_ONE/snapshot/SHA256SUMS"
+test ! -e "$OUTPUT_ONE/snapshot/.enrichment"
+test ! -e "$OUTPUT_ONE/snapshot/enrichment-state.json"
 test -f "$OUTPUT_ONE/snapshot/quality-report.json"
 test -f "$OUTPUT_ONE/snapshot/provenance.md"
 test -f "$OUTPUT_ONE/snapshot/content/source-a/guide/assets/a.png"
