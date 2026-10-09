@@ -189,13 +189,13 @@ def check_page(page, route, artifacts, width):
             assert 'export XCSH_API_TOKEN="$XCSH_API_TOKEN"' in setup
             env = {**os.environ, "XCSH_API_TOKEN": "mock environment token $HOME"}
             # Execute the repository-owned setup template with a synthetic environment token.
-            result = subprocess.run(
+            result = subprocess.run(  # noqa: S603 -- repository-owned setup and synthetic token
                 ["/usr/bin/bash", "-c", setup + '\nprintf %s "$XCSH_API_TOKEN"'],
                 env=env,
                 text=True,
                 capture_output=True,
                 check=True,
-            )  # noqa: S603
+            )
             assert result.stdout == env["XCSH_API_TOKEN"]
         page.locator("#ph-XCSH_LB_NAME").fill("FORM_SENTINEL_INDEPENDENT")
         assert (
