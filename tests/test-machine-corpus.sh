@@ -192,6 +192,9 @@ checksums = "".join(
     for path in members
 )
 (root / "SHA256SUMS").write_text(checksums, encoding="utf-8")
+(root / ".enrichment").mkdir()
+(root / ".enrichment/private.json").write_text("PRIVATE_ENRICHMENT_EVIDENCE")
+(root / "enrichment-state.json").write_text("PRIVATE_ENRICHMENT_STATE")
 PY
 
 run_builder() {
@@ -232,6 +235,8 @@ test ! -e "$OUTPUT_ONE/source-a/guide/index.html"
 test ! -e "$OUTPUT_ONE/fr/llms.txt"
 test -f "$OUTPUT_ONE/snapshot/manifest.json"
 test -f "$OUTPUT_ONE/snapshot/SHA256SUMS"
+test ! -e "$OUTPUT_ONE/snapshot/.enrichment"
+test ! -e "$OUTPUT_ONE/snapshot/enrichment-state.json"
 test -f "$OUTPUT_ONE/snapshot/quality-report.json"
 test -f "$OUTPUT_ONE/snapshot/provenance.md"
 test -f "$OUTPUT_ONE/snapshot/content/source-a/guide/assets/a.png"

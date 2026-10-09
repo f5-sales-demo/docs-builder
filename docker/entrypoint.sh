@@ -38,6 +38,11 @@ if [ -n "$MACHINE_CORPUS_DIR" ]; then
   rm -rf /app/public/snapshot
   mkdir -p /app/public/snapshot
   cp -R "$CORPUS_ROOT"/. /app/public/snapshot/
+  # Transformation evidence is private build input, never a published route.
+  rm -rf /app/public/snapshot/.enrichment
+  rm -f /app/public/snapshot/enrichment-state.json /app/public/snapshot/curation-audit.json \
+    /app/public/snapshot/state.sqlite /app/public/snapshot/state.sqlite-wal \
+    /app/public/snapshot/state.sqlite-shm
   MACHINE_CORPUS_DIR="$CORPUS_ROOT"
   export MACHINE_CORPUS_DIR
   echo "Progressive machine corpus mounted from $CORPUS_ROOT"
