@@ -220,6 +220,93 @@ class BrowserAcceptance(unittest.TestCase):
         button = self.page.locator('[data-xcsh-context="json"] button[data-code]').last
         assert json.loads(button.get_attribute("data-code"))["namespace"] == value
 
+    def test_statistics_origin_and_all_inline_clipboards(self):
+        for width, height in [(1440, 1000), (390, 844)]:
+            self.page.set_viewport_size({"width": width, "height": height})
+            for path in [
+                "origin-performance/",
+                "setup/",
+                "service-graph/",
+                "access-logs/",
+                "application-health/",
+                "api-discovery/",
+                "firewall-metrics/",
+                "security-events/",
+                "verification/",
+                "deployment/",
+                "troubleshooting/",
+                "",
+            ]:
+                with self.subTest(width=width, path=path):
+                    self.visit("statistics", path)
+                    value = 'Reader O\'Brien "quote" \\ $HOME $(id) `id`'
+                    self.page.locator("#ph-XCSH_NAMESPACE").fill(value)
+                    for block in self.page.locator('[data-xcsh-render="inline"]').all():
+                        button = block.locator("button[data-code]")
+                        button.click()
+                        copied = self.page.evaluate("navigator.clipboard.readText()")
+                        assert copied == block.locator("pre code").text_content()
+                        assert "<XCSH_NAMESPACE>" not in copied
+                        # Parse only: resource commands are never executed here.
+                        result = subprocess.run(
+                            ["/usr/bin/bash", "-n"],
+                            input=copied,
+                            text=True,
+                            capture_output=True,
+                            check=False,
+                        )
+                        assert result.returncode == 0, (path, result.stderr)
+                    assert not self.errors, self.errors
+
+    def test_statistics_script_lines_clipboard_and_blob_download(self):
+        for width, height in [(1440, 1000), (390, 844)]:
+            self.page.set_viewport_size({"width": width, "height": height})
+            self.visit("statistics", "shell-scripts/")
+            for name in ["simple-stats", "get-stats"]:
+                with self.subTest(width=width, name=name):
+                    block = self.page.locator(
+                        f'[data-xcsh-download="{name}-personalized.sh"]'
+                    )
+                    value = 'Reader O\'Brien "quote" \\ $HOME $(id) `id`'
+                    self.page.locator("#ph-XCSH_NAMESPACE").fill(value)
+                    self.page.locator("#ph-XCSH_API_TOKEN").fill("SECRET_SENTINEL")
+                    block.locator("button[data-code]").click()
+                    copied = self.page.evaluate("navigator.clipboard.readText()")
+                    assert copied == block.locator("pre code").text_content()
+                    assert copied.startswith("#!/usr/bin/env bash\nexport ")
+                    assert "SECRET_SENTINEL" not in copied
+                    assert "export XCSH_API_TOKEN=" not in copied
+                    assert "$XCSH_VIRTUAL_HOST" in copied
+                    assert "${XCSH_API_TOKEN}" in copied
+                    # The source retains its exact canonical suffix, including all lines.
+                    canonical = (
+                        self.context.request.get(
+                            BASE + f"/statistics/assets/scripts/{name}.sh"
+                        )
+                        .body()
+                        .decode()
+                    )
+                    assert copied.endswith(canonical.split("\n", 1)[1])
+                    assert block.locator("pre code").evaluate(
+                        "(e)=>getComputedStyle(e).whiteSpace"
+                    ) in ["pre", "pre-wrap", "break-spaces"]
+                    with self.page.expect_download() as pending:
+                        block.get_by_role(
+                            "button", name="Download personalized script", exact=True
+                        ).click()
+                    download = pending.value
+                    assert download.suggested_filename == name + "-personalized.sh"
+                    assert Path(download.path()).read_text() == copied
+                    result = subprocess.run(
+                        ["/usr/bin/bash", "-n"],
+                        input=copied,
+                        text=True,
+                        capture_output=True,
+                        check=False,
+                    )
+                    assert result.returncode == 0, result.stderr
+                    assert not self.errors, self.errors
+
 
 if __name__ == "__main__":
     unittest.main()

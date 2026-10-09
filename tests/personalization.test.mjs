@@ -175,3 +175,37 @@ test('legacy schemas normalize during coordinated consumer publication', () => {
     assert.ok(Object.keys(result.fields).every((k) => k.startsWith('XCSH_')));
   }
 });
+
+test('inline substitutes every command argument without adding exports', () => {
+  const source = 'XCSH_JSON="$(capture --arg ns "<XCSH_NAMESPACE>" "https://<XCSH_DOMAINNAME>/${XCSH_ORIGIN_POOL}")"';
+  const values = { XCSH_NAMESPACE: 'Reader "quote" \\ $HOME $(id)', XCSH_DOMAINNAME: 'app.example.com' };
+  const rendered = renderRunnable(source, Object.keys(values), values, { mode: 'inline' });
+  assert.ok(!rendered.startsWith('export '));
+  assert.ok(rendered.includes('${XCSH_ORIGIN_POOL}'));
+  const result = requireChildProcess.execFileSync(
+    '/bin/sh',
+    ['-c', 'capture() { printf "%s" "$3"; }; ' + rendered + '\nprintf "%s" "$XCSH_JSON"'],
+    { encoding: 'utf8' },
+  );
+  assert.equal(result, values.XCSH_NAMESPACE);
+});
+test('script exports follow shebang and never embed credentials', () => {
+  const source = '#!/usr/bin/env bash\nset -euo pipefail\n: "${XCSH_API_TOKEN:?}"\nprintf "%s" "$XCSH_NAMESPACE"\n';
+  const values = { XCSH_NAMESPACE: "O'Brien \\ $HOME $(id)", XCSH_API_TOKEN: 'SECRET_SENTINEL' };
+  const rendered = renderRunnable(source, Object.keys(values), values, { mode: 'script' });
+  assert.ok(rendered.startsWith('#!/usr/bin/env bash\nexport XCSH_NAMESPACE='));
+  assert.ok(!rendered.includes('SECRET_SENTINEL'));
+  assert.ok(!rendered.includes('export XCSH_API_TOKEN='));
+  assert.ok(rendered.endsWith(source.slice(source.indexOf('\n') + 1)));
+  requireChildProcess.execFileSync('/bin/sh', ['-n'], { input: rendered });
+});
+
+test('credential catalog classification also excludes nonstandard secret fields', () => {
+  const output = renderRunnable(
+    '#!/bin/sh\nprintf ok\n',
+    ['XCSH_AUTH_VALUE'],
+    { XCSH_AUTH_VALUE: 'SECRET_SENTINEL' },
+    { mode: 'script', fields: { XCSH_AUTH_VALUE: { credential: true } } },
+  );
+  assert.equal(output, '#!/bin/sh\nprintf ok\n');
+});
