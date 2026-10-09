@@ -32,6 +32,15 @@ Catalog fields define descriptions, input types, examples, credential
 classification and semantic scope. New independent settings need a catalog entry.
 DNS zones, application hostnames and origins have distinct names.
 
+Consumers can opt into `behavior: { "fallbackToDefaults": true, "environmentToken": true }`
+in the version 2 manifest. `fallbackToDefaults` resolves empty noncredential values to
+the guide default, including saved blanks, and repopulates cleared inputs on blur.
+`environmentToken` leaves the API token input empty and renders an unset token as
+`$XCSH_API_TOKEN` in shell examples. Use double quotes for setup token assignments
+and a required-value check to preserve an existing environment token and report a
+missing one. Entered tokens retain contextual escaping and session storage. Omit
+these options to retain the existing placeholder and empty-field behavior.
+
 ## Author templates
 
 Use `<XCSH_VARIABLE_NAME>` in code, inline code and structured examples.

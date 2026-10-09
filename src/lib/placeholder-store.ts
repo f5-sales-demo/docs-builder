@@ -1,7 +1,7 @@
 import catalog from '../data/field-catalog.json';
 import legacy from '../data/legacy-fields.json';
 import manifest from '../data/placeholders.json';
-import { createStore, resolveManifest } from './personalization.mjs';
+import { createStore, resolveManifest, resolveValues } from './personalization.mjs';
 
 const aliases = Object.assign(
   {},
@@ -33,6 +33,7 @@ export function getDefaults(): Record<string, string> {
   return Object.fromEntries(Object.entries(placeholderDefs).map(([key, def]) => [key, def.default]));
 }
 export function getAllValues(values: Record<string, string>): Record<string, string> {
+  values = resolveValues(values, placeholderDefs);
   const cidr = values.XCSH_PROTECTED_CIDR_V4;
   const legacyValues = Object.fromEntries(
     Object.entries(definition.aliases).map(([old, name]) => [old, values[name as string]]),

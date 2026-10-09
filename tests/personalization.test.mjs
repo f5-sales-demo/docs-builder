@@ -229,3 +229,91 @@ test('credential catalog classification also excludes nonstandard secret fields'
   );
   assert.equal(output, '#!/bin/sh\nprintf ok\n');
 });
+
+const defaultManifest = { ...manifest, behavior: { fallbackToDefaults: true, environmentToken: true } };
+test('opt-in defaults resolve saved blanks, clearing, reload and reset without changing other consumers', () => {
+  const local = new Storage(),
+    session = new Storage();
+  local.setItem('f5-docs-values-v1', JSON.stringify({ version: 1, values: { XCSH_NAMESPACE: '' } }));
+  const store = setup(local, session, defaultManifest);
+  assert.equal(store.load().XCSH_NAMESPACE, 'demo-app');
+  assert.equal(store.load().XCSH_API_TOKEN, '');
+  store.set('XCSH_NAMESPACE', 'reader');
+  store.set('XCSH_API_TOKEN', 'SESSION_TOKEN');
+  assert.equal(setup(local, session, defaultManifest).load().XCSH_NAMESPACE, 'reader');
+  store.set('XCSH_NAMESPACE', '');
+  assert.equal(store.load().XCSH_NAMESPACE, 'demo-app');
+  assert.equal(setup(local, session).load().XCSH_NAMESPACE, '');
+  store.reset();
+  assert.equal(store.load().XCSH_API_TOKEN, 'SESSION_TOKEN');
+  store.clearCredentials();
+  assert.equal(store.load().XCSH_API_TOKEN, '');
+  assert.ok(![...local.data.values()].join('').includes('SESSION_TOKEN'));
+});
+test('opt-in fallback resolves prose, structured code and shell from unchanged templates', () => {
+  const { fields } = resolveManifest(defaultManifest, catalog);
+  const values = { XCSH_NAMESPACE: '', XCSH_API_TOKEN: '' };
+  assert.equal(substitute('<XCSH_NAMESPACE>', values, 'text', fields), 'demo-app');
+  assert.deepEqual(JSON.parse(substitute('{"ns":"<XCSH_NAMESPACE>"}', values, 'json', fields)), { ns: 'demo-app' });
+  assert.equal(substitute('"<XCSH_NAMESPACE>"', values, 'hcl', fields), '"demo-app"');
+  assert.equal(substitute('<XCSH_API_TOKEN>', values, 'text', fields), '$XCSH_API_TOKEN');
+  assert.equal(
+    renderRunnable('printf %s "<XCSH_NAMESPACE>"', ['XCSH_NAMESPACE'], values, { mode: 'inline', fields }),
+    'printf %s "demo-app"',
+  );
+});
+test('unset environment token expands safely in every shell quote context; entered token stays literal', () => {
+  const { fields } = resolveManifest(defaultManifest, catalog);
+  const token = 'mock O\'Brien "quote" \\ $HOME $(id) `id`\nnext';
+  for (const template of [
+    'capture <XCSH_API_TOKEN>',
+    'capture "<XCSH_API_TOKEN>"',
+    "capture 'prefix <XCSH_API_TOKEN> suffix'",
+  ]) {
+    for (const entered of ['', token]) {
+      const rendered = renderRunnable(
+        template,
+        ['XCSH_API_TOKEN'],
+        { XCSH_API_TOKEN: entered },
+        { mode: 'inline', fields },
+      );
+      const output = requireChildProcess.execFileSync(
+        '/bin/sh',
+        ['-c', 'capture() { test "$#" = 1; printf "%s" "$1"; }; ' + rendered],
+        {
+          encoding: 'utf8',
+          env: { ...process.env, XCSH_API_TOKEN: entered ? 'different-token' : token },
+        },
+      );
+      assert.equal(output, template.includes('prefix') ? 'prefix ' + token + ' suffix' : token);
+    }
+  }
+});
+test('setup preserves an existing environment token and reports a missing one', () => {
+  const { fields } = resolveManifest(defaultManifest, catalog);
+  const source =
+    'export XCSH_API_TOKEN="<XCSH_API_TOKEN>"\n: "${XCSH_API_TOKEN:?Set XCSH_API_TOKEN}"\nprintf %s "$XCSH_API_TOKEN"';
+  const output = renderRunnable(source, ['XCSH_API_TOKEN'], { XCSH_API_TOKEN: '' }, { mode: 'inline', fields });
+  const env = { ...process.env, XCSH_API_TOKEN: 'mock token $HOME' };
+  assert.equal(
+    requireChildProcess.execFileSync('/bin/sh', ['-c', output], { encoding: 'utf8', env }),
+    env.XCSH_API_TOKEN,
+  );
+  delete env.XCSH_API_TOKEN;
+  const result = requireChildProcess.spawnSync('/bin/sh', ['-c', output], { encoding: 'utf8', env });
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /Set XCSH_API_TOKEN/);
+  const script = '#!/bin/sh\n: "${XCSH_API_TOKEN:?}"\n';
+  assert.equal(
+    renderRunnable(script, ['XCSH_API_TOKEN'], { XCSH_API_TOKEN: 'SESSION_TOKEN' }, { mode: 'script', fields }),
+    script,
+  );
+});
+test('optional behavior rejects invalid configuration and never allows credential example defaults', () => {
+  for (const behavior of [{ fallbackToDefaults: 'yes' }, { environmentToken: 1 }, { unknown: true }, []])
+    assert.throws(() => resolveManifest({ ...manifest, behavior }, catalog));
+  assert.equal(
+    resolveManifest({ ...defaultManifest, examples: { XCSH_API_TOKEN: 'BAD' } }, catalog).fields.XCSH_API_TOKEN.default,
+    '',
+  );
+});

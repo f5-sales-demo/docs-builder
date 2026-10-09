@@ -25,6 +25,19 @@ export default function PlaceholderForm() {
   return (
     <details className="ph-form-wrapper">
       <summary>Customize examples</summary>
+      {Object.values(placeholderDefs).some((def) => def.fallbackToDefault) && (
+        <p>
+          Examples start with illustrative defaults. Replace them with values from your environment and the linked
+          discovery procedures. Each field is independent. Clearing a field restores its default in examples; leaving
+          the field restores its displayed value.
+        </p>
+      )}
+      {placeholderDefs.XCSH_API_TOKEN?.environmentToken && (
+        <p>
+          Leave the API token empty to use $XCSH_API_TOKEN from your shell environment. Enter a token to include it in
+          copied inline commands; Clear credentials restores the environment reference.
+        </p>
+      )}
       <p id="ph-storage-help">
         Edited values follow matching fields across F5 guides in this browser. Credentials stay in this tab’s session
         and are masked in the form. Copying an example includes its required credentials. Browser session restore may
@@ -48,8 +61,11 @@ export default function PlaceholderForm() {
                         value={values[key] ?? def.default}
                         onChange={(e) => {
                           setValue(key, e.target.value);
-                          refresh();
+                          const next = loadValues();
+                          setValues({ ...next, [key]: e.target.value });
+                          emitChange(next);
                         }}
+                        onBlur={refresh}
                       >
                         {def.options.map((opt: string) => (
                           <option key={opt} value={opt}>
@@ -68,8 +84,11 @@ export default function PlaceholderForm() {
                         value={values[key] ?? def.default}
                         onChange={(e) => {
                           setValue(key, e.target.value);
-                          refresh();
+                          const next = loadValues();
+                          setValues({ ...next, [key]: e.target.value });
+                          emitChange(next);
                         }}
+                        onBlur={refresh}
                       />
                     )}
                     {def.hint && <span id={'ph-hint-' + key}>{def.hint}</span>}
