@@ -38,6 +38,13 @@ export default function PlaceholderForm() {
           copied inline commands; Clear credentials restores the environment reference.
         </p>
       )}
+      {Object.values(placeholderDefs).some((def) => def.environmentCredential) && (
+        <p>
+          Leave credentials empty to use their named shell environment variables. Protected-input examples prompt
+          privately when no passphrase is set. Entered credentials appear in displayed and copied shell commands. Clear
+          credentials removes tokens and passphrases. Enter file paths only; never paste private keys or bundles.
+        </p>
+      )}
       <p id="ph-storage-help">
         Edited values follow matching fields across F5 guides in this browser. Credentials stay in this tab’s session
         and are masked in the form. Copying an example includes its required credentials. Browser session restore may

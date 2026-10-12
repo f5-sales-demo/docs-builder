@@ -23,7 +23,10 @@ export function resolveManifest(manifest, catalog, aliases = {}) {
   const behavior = manifest.behavior ?? {};
   if (!behavior || typeof behavior !== 'object' || Array.isArray(behavior)) throw Error('Invalid manifest behavior');
   for (const [key, value] of Object.entries(behavior))
-    if (!['fallbackToDefaults', 'environmentToken'].includes(key) || typeof value !== 'boolean')
+    if (
+      !['fallbackToDefaults', 'environmentToken', 'environmentCredentials'].includes(key) ||
+      typeof value !== 'boolean'
+    )
       throw Error('Unknown or invalid manifest behavior: ' + key);
   const fields = {};
   for (const name of manifest.fields) {
@@ -32,7 +35,8 @@ export function resolveManifest(manifest, catalog, aliases = {}) {
     if (fields[name].credential) fields[name].default = '<' + name + '>';
     fields[name].fallbackToDefault = Boolean(behavior.fallbackToDefaults && !fields[name].credential);
     fields[name].environmentToken = Boolean(behavior.environmentToken && name === 'XCSH_API_TOKEN');
-    if (fields[name].environmentToken) fields[name].default = '';
+    fields[name].environmentCredential = Boolean(behavior.environmentCredentials && fields[name].credential);
+    if (fields[name].environmentToken || fields[name].environmentCredential) fields[name].default = '';
     if (fields[name].fallbackToDefault && fields[name].hint)
       fields[name].hint = fields[name].hint.replace(
         'Leave blank to retain its placeholder.',
@@ -191,6 +195,8 @@ export function substitute(template, values, context = 'text', fields = {}) {
   return template.replace(marker, (match, canonical, legacy, offset) => {
     const name = canonical ?? legacy;
     if (!own(values, name)) return match;
+    // Credential values belong only in displayed/copied shell commands.
+    if (fields[name]?.environmentCredential && ['json', 'hcl'].includes(context)) return match;
     for (; position < offset; position++) {
       const c = template[position];
       if (escaped) {
@@ -219,7 +225,7 @@ export function substitute(template, values, context = 'text', fields = {}) {
     }
     position = offset + match.length;
     const value = String(values[name]);
-    if (value === '' && fields[name]?.environmentToken) {
+    if (value === '' && (fields[name]?.environmentToken || fields[name]?.environmentCredential)) {
       if (context === 'shell') {
         if (quote === '"') return '$' + name;
         if (quote === "'") return '\'"$' + name + '"\'';
@@ -275,7 +281,11 @@ export function renderRunnable(template, required, values, { mode = 'legacy', fi
         'export ' +
         name +
         '=' +
-        (values[name] === '' && fields[name]?.environmentToken ? '"$' + name + '"' : shellQuote(values[name])),
+        (values[name] === '' && fields[name]?.environmentCredential
+          ? '"${' + name + '-}"'
+          : values[name] === '' && fields[name]?.environmentToken
+            ? '"$' + name + '"'
+            : shellQuote(values[name])),
     )
     .join('\n');
   const nativeOrigin =

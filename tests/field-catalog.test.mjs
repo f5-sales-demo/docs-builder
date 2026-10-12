@@ -4,6 +4,13 @@ import test from 'node:test';
 import { resolveManifest } from '../src/lib/personalization.mjs';
 
 const catalog = JSON.parse(fs.readFileSync(new URL('../src/data/field-catalog.json', import.meta.url)));
+const legacy = JSON.parse(fs.readFileSync(new URL('../src/data/legacy-fields.json', import.meta.url)));
+const aliases = Object.assign(
+  {},
+  ...Object.values(legacy).map((fields) =>
+    Object.fromEntries(Object.entries(fields).map(([name, field]) => [name, field.name])),
+  ),
+);
 test('catalog names, descriptions, credential classification and semantic scopes', () => {
   for (const [name, field] of Object.entries(catalog)) {
     assert.match(name, /^XCSH_[A-Z][A-Z0-9_]*$/);
@@ -28,6 +35,6 @@ test('all governed form consumer manifests select catalog fields', () => {
     'demo-resource-template',
   ]) {
     const manifest = JSON.parse(fs.readFileSync(root + '/' + repo + '/docs/placeholders.json'));
-    resolveManifest(manifest, catalog);
+    resolveManifest(manifest, catalog, aliases);
   }
 });
