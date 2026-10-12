@@ -570,5 +570,144 @@
     "scope": "generator-vm-name",
     "discovered": true,
     "hint": "Paste generator_vm_name from the reviewed Terraform outputs. Leave blank to retain its placeholder."
+  },
+  "XCSH_CERT_NAME": {
+    "type": "text",
+    "default": "demo-app-certificate",
+    "description": "Certificate resource name",
+    "credential": false,
+    "scope": "certificate-name"
+  },
+  "XCSH_CERT_ID": {
+    "type": "text",
+    "default": "server",
+    "description": "Stable inline certificate ID",
+    "credential": false,
+    "scope": "certificate-id"
+  },
+  "XCSH_COMPANION_DOMAINNAME": {
+    "type": "text",
+    "default": "cli-app.example.com",
+    "description": "Companion certificate hostname",
+    "credential": false,
+    "scope": "companion-hostname"
+  },
+  "XCSH_MATERIAL_VERSION": {
+    "type": "text",
+    "default": "1",
+    "description": "Write-only material version",
+    "credential": false,
+    "scope": "certificate-material-version"
+  },
+  "XCSH_VIRTUAL_SITE_NAME": {
+    "type": "text",
+    "default": "<XCSH_VIRTUAL_SITE_NAME>",
+    "description": "Existing virtual-site name",
+    "credential": false,
+    "scope": "virtual-site-name",
+    "hint": "Paste the exact identity of an existing site with workload capacity. Clear to retain the visible placeholder."
+  },
+  "XCSH_VIRTUAL_SITE_NAMESPACE": {
+    "type": "text",
+    "default": "<XCSH_VIRTUAL_SITE_NAMESPACE>",
+    "description": "Existing virtual-site namespace",
+    "credential": false,
+    "scope": "virtual-site-namespace",
+    "hint": "Paste the exact identity of an existing site with workload capacity. Clear to retain the visible placeholder."
+  },
+  "XCSH_CONTAINER_IMAGE": {
+    "type": "text",
+    "default": "nginx:alpine",
+    "description": "Workload container image",
+    "credential": false,
+    "scope": "container-image"
+  },
+  "XCSH_WORKDIR": {
+    "type": "text",
+    "default": "<XCSH_WORKDIR>",
+    "description": "Private working directory",
+    "credential": false,
+    "scope": "workdir",
+    "hint": "Enter an absolute local path outside Git. Paths are literal; shell variables and ~ are not expanded. Clear to retain the visible placeholder."
+  },
+  "XCSH_CERT_FILE": {
+    "type": "text",
+    "default": "<XCSH_CERT_FILE>",
+    "description": "Leaf-first public certificate chain path",
+    "credential": false,
+    "scope": "cert-file",
+    "hint": "Enter an absolute local path outside Git. Paths are literal; shell variables and ~ are not expanded. Clear to retain the visible placeholder."
+  },
+  "XCSH_KEY_FILE": {
+    "type": "text",
+    "default": "<XCSH_KEY_FILE>",
+    "description": "Matching private-key file path",
+    "credential": false,
+    "scope": "key-file",
+    "hint": "Enter an absolute local path outside Git. Paths are literal; shell variables and ~ are not expanded. Clear to retain the visible placeholder."
+  },
+  "XCSH_RENEWED_CERT_FILE": {
+    "type": "text",
+    "default": "<XCSH_RENEWED_CERT_FILE>",
+    "description": "Renewed public certificate chain path",
+    "credential": false,
+    "scope": "renewed-cert-file",
+    "hint": "Enter an absolute local path outside Git. Paths are literal; shell variables and ~ are not expanded. Clear to retain the visible placeholder."
+  },
+  "XCSH_RENEWED_KEY_FILE": {
+    "type": "text",
+    "default": "<XCSH_RENEWED_KEY_FILE>",
+    "description": "Renewed matching private-key path",
+    "credential": false,
+    "scope": "renewed-key-file",
+    "hint": "Enter an absolute local path outside Git. Paths are literal; shell variables and ~ are not expanded. Clear to retain the visible placeholder."
+  },
+  "XCSH_PROTECTED_KEY_FILE": {
+    "type": "text",
+    "default": "<XCSH_PROTECTED_KEY_FILE>",
+    "description": "Protected PEM key path",
+    "credential": false,
+    "scope": "protected-key-file",
+    "hint": "Enter an absolute local path outside Git. Paths are literal; shell variables and ~ are not expanded. Clear to retain the visible placeholder."
+  },
+  "XCSH_P12_FILE": {
+    "type": "text",
+    "default": "<XCSH_P12_FILE>",
+    "description": "PKCS#12 bundle path",
+    "credential": false,
+    "scope": "p12-file",
+    "hint": "Enter an absolute local path outside Git. Paths are literal; shell variables and ~ are not expanded. Clear to retain the visible placeholder."
+  },
+  "XCSH_ORIGIN_CA_FILE": {
+    "type": "text",
+    "default": "<XCSH_ORIGIN_CA_FILE>",
+    "description": "Origin public trust CA path",
+    "credential": false,
+    "scope": "origin-ca-file",
+    "hint": "Enter an absolute local path outside Git. Paths are literal; shell variables and ~ are not expanded. Clear to retain the visible placeholder."
+  },
+  "XCSH_INTERCEPTION_CA_FILE": {
+    "type": "text",
+    "default": "<XCSH_INTERCEPTION_CA_FILE>",
+    "description": "Interception signing CA certificate path",
+    "credential": false,
+    "scope": "interception-ca-file",
+    "hint": "Enter an absolute local path outside Git. Paths are literal; shell variables and ~ are not expanded. Clear to retain the visible placeholder."
+  },
+  "XCSH_INTERCEPTION_KEY_FILE": {
+    "type": "text",
+    "default": "<XCSH_INTERCEPTION_KEY_FILE>",
+    "description": "Interception signing CA key path",
+    "credential": false,
+    "scope": "interception-key-file",
+    "hint": "Enter an absolute local path outside Git. Paths are literal; shell variables and ~ are not expanded. Clear to retain the visible placeholder."
+  },
+  "XCSH_TLS_INPUT_PASSWORD": {
+    "type": "text",
+    "default": "<XCSH_TLS_INPUT_PASSWORD>",
+    "description": "Protected PEM or PKCS#12 passphrase",
+    "credential": true,
+    "scope": "tls-input-password",
+    "hint": "Optional tab-session credential. Leave empty to use the shell environment or a private prompt. Never enter key or bundle contents."
   }
 }

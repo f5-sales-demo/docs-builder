@@ -32,6 +32,8 @@ Catalog fields define descriptions, input types, examples, credential
 classification and semantic scope. New independent settings need a catalog entry.
 DNS zones, application hostnames and origins have distinct names.
 
+Certificate workflows can also opt into `environmentCredentials: true`. This leaves every selected credential blank by default and uses its named shell environment variable when empty. Entered values render only in prose and displayed/copied shell commands; JSON and HCL keep canonical credential placeholders. Tokens and passphrases share tab-session storage and Clear credentials removes both. Paths such as `XCSH_KEY_FILE` are noncredentials and accept only local filenames, never file contents. Existing `environmentToken` consumers retain their behavior.
+
 Consumers can opt into `behavior: { "fallbackToDefaults": true, "environmentToken": true }`
 in the version 2 manifest. `fallbackToDefaults` resolves empty noncredential values to
 the guide default, including saved blanks, and repopulates cleared inputs on blur.
