@@ -334,12 +334,7 @@
     "description": "DDoS-protected IPv4 prefix length",
     "credential": false,
     "scope": "protected-cidr-v4",
-    "options": [
-      "/24 (256 IPs)",
-      "/23 (512 IPs)",
-      "/22 (1024 IPs)",
-      "/21 (2048 IPs)"
-    ]
+    "options": ["/24 (256 IPs)", "/23 (512 IPs)", "/22 (1024 IPs)", "/21 (2048 IPs)"]
   },
   "XCSH_PROTECTED_NET_V4": {
     "type": "text",
