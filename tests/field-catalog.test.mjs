@@ -38,3 +38,43 @@ test('all governed form consumer manifests select catalog fields', () => {
     resolveManifest(manifest, catalog, aliases);
   }
 });
+import { createStore, substitute } from '../src/lib/personalization.mjs';
+
+test('Wingman fields retain independent identities, placeholders and literal shell values', () => {
+  const names = [
+    'XCSH_WINGMAN_NAME',
+    'XCSH_WINGMAN_SITE_SELECTOR',
+    'XCSH_KUBECONFIG_FILE',
+    'XCSH_KUBECONFIG_CONTEXT',
+    'XCSH_WINGMAN_IMAGE',
+  ];
+  const definition = resolveManifest({ version: 2, fields: names, behavior: { fallbackToDefaults: true } }, catalog);
+  const backing = new Map();
+  const storage = {
+    getItem: (key) => backing.get(key) ?? null,
+    setItem: (key, value) => backing.set(key, value),
+    removeItem: (key) => backing.delete(key),
+  };
+  const store = createStore(definition, { local: storage, session: storage });
+  for (const name of names) {
+    assert.equal(definition.fields[name].default, '<' + name + '>');
+    assert.equal(definition.fields[name].credential, false);
+    assert.ok(definition.fields[name].hint);
+  }
+  store.set('XCSH_WINGMAN_NAME', 'reader-wingman');
+  store.set('XCSH_KUBECONFIG_CONTEXT', 'reader-context');
+  store.set('XCSH_KUBECONFIG_FILE', "/private/reader's kubeconfig");
+  const values = store.load();
+  assert.equal(values.XCSH_WINGMAN_NAME, 'reader-wingman');
+  assert.equal(values.XCSH_KUBECONFIG_CONTEXT, 'reader-context');
+  assert.equal(values.XCSH_WINGMAN_SITE_SELECTOR, '<XCSH_WINGMAN_SITE_SELECTOR>');
+  assert.equal(catalog.XCSH_CONTAINER_IMAGE.default, 'nginx:alpine');
+  const command = substitute(
+    'kubectl --kubeconfig "<XCSH_KUBECONFIG_FILE>" --context "<XCSH_KUBECONFIG_CONTEXT>"',
+    values,
+    'shell',
+    definition.fields,
+  );
+  assert.match(command, /reader-context/);
+  assert.match(command, /reader/);
+});

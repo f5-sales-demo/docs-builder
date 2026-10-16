@@ -709,5 +709,45 @@
     "credential": true,
     "scope": "tls-input-password",
     "hint": "Optional tab-session credential. Leave empty to use the shell environment or a private prompt. Never enter key or bundle contents."
+  },
+  "XCSH_WINGMAN_NAME": {
+    "type": "text",
+    "default": "<XCSH_WINGMAN_NAME>",
+    "description": "Wingman naming base",
+    "credential": false,
+    "scope": "wingman-name",
+    "hint": "Choose an independent naming base shared by bootstrap, runtime, and the existing Terraform owner. Clear to retain the visible placeholder."
+  },
+  "XCSH_WINGMAN_SITE_SELECTOR": {
+    "type": "text",
+    "default": "<XCSH_WINGMAN_SITE_SELECTOR>",
+    "description": "Existing Wingman RE site selector",
+    "credential": false,
+    "scope": "wingman-site-selector",
+    "hint": "Enter the observed site-label expression and verify exactly one existing RE with effective vK8s quota. Clear to retain the visible placeholder."
+  },
+  "XCSH_KUBECONFIG_FILE": {
+    "type": "text",
+    "default": "<XCSH_KUBECONFIG_FILE>",
+    "description": "Private scoped kubeconfig file path",
+    "credential": false,
+    "scope": "kubeconfig-file",
+    "hint": "Enter an absolute path to the one-day scoped kubeconfig outside Git. Enter only its path, never credential contents. Clear to retain the visible placeholder."
+  },
+  "XCSH_KUBECONFIG_CONTEXT": {
+    "type": "text",
+    "default": "<XCSH_KUBECONFIG_CONTEXT>",
+    "description": "Explicit scoped kubeconfig context",
+    "credential": false,
+    "scope": "kubeconfig-context",
+    "hint": "Select the exact context for the reviewed namespace and vK8s cluster. Clear to retain the visible placeholder."
+  },
+  "XCSH_WINGMAN_IMAGE": {
+    "type": "text",
+    "default": "<XCSH_WINGMAN_IMAGE>",
+    "description": "Immutable Wingman application image",
+    "credential": false,
+    "scope": "wingman-image",
+    "hint": "Paste the published Wingman image as ghcr.io/f5-sales-demo/certificate-management-wingman@sha256:digest. A floating tag is rejected. Clear to retain the visible placeholder."
   }
 }
