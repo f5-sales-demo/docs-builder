@@ -334,7 +334,12 @@
     "description": "DDoS-protected IPv4 prefix length",
     "credential": false,
     "scope": "protected-cidr-v4",
-    "options": ["/24 (256 IPs)", "/23 (512 IPs)", "/22 (1024 IPs)", "/21 (2048 IPs)"]
+    "options": [
+      "/24 (256 IPs)",
+      "/23 (512 IPs)",
+      "/22 (1024 IPs)",
+      "/21 (2048 IPs)"
+    ]
   },
   "XCSH_PROTECTED_NET_V4": {
     "type": "text",
@@ -744,10 +749,18 @@
   },
   "XCSH_WINGMAN_IMAGE": {
     "type": "text",
-    "default": "<XCSH_WINGMAN_IMAGE>",
-    "description": "Immutable Wingman application image",
+    "default": "ghcr.io/f5-sales-demo/certificate-management-wingman:latest",
+    "description": "Wingman application image",
     "credential": false,
     "scope": "wingman-image",
-    "hint": "Paste the published Wingman image as ghcr.io/f5-sales-demo/certificate-management-wingman@sha256:digest. A floating tag is rejected. Clear to retain the visible placeholder."
+    "hint": "Use the governed latest alias or an immutable SHA-256 image reference. Record the resolved pod image ID in verification evidence."
+  },
+  "XCSH_APPLICATION_CERT_FILE": {
+    "type": "text",
+    "default": "<XCSH_APPLICATION_CERT_FILE>",
+    "description": "Wingman application public certificate chain path",
+    "credential": false,
+    "scope": "application-cert-file",
+    "hint": "Enter an absolute local path outside Git. Paths are literal; shell variables and ~ are not expanded. Clear to retain the visible placeholder."
   }
 }

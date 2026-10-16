@@ -26,6 +26,7 @@ test('all governed form consumer manifests select catalog fields', () => {
   const root = process.env.FORM_CONSUMER_ROOT;
   if (!root) return;
   for (const repo of [
+    'certificate-management',
     'statistics',
     'csd',
     'dns',
@@ -47,6 +48,7 @@ test('Wingman fields retain independent identities, placeholders and literal she
     'XCSH_KUBECONFIG_FILE',
     'XCSH_KUBECONFIG_CONTEXT',
     'XCSH_WINGMAN_IMAGE',
+    'XCSH_APPLICATION_CERT_FILE',
   ];
   const definition = resolveManifest({ version: 2, fields: names, behavior: { fallbackToDefaults: true } }, catalog);
   const backing = new Map();
@@ -57,7 +59,7 @@ test('Wingman fields retain independent identities, placeholders and literal she
   };
   const store = createStore(definition, { local: storage, session: storage });
   for (const name of names) {
-    assert.equal(definition.fields[name].default, '<' + name + '>');
+    assert.equal(definition.fields[name].default, name === 'XCSH_WINGMAN_IMAGE' ? 'ghcr.io/f5-sales-demo/certificate-management-wingman:latest' : '<' + name + '>');
     assert.equal(definition.fields[name].credential, false);
     assert.ok(definition.fields[name].hint);
   }
