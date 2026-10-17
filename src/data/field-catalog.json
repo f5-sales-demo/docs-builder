@@ -757,5 +757,61 @@
     "credential": false,
     "scope": "application-cert-file",
     "hint": "Enter an absolute local path outside Git. Paths are literal; shell variables and ~ are not expanded. Clear to retain the visible placeholder."
+  },
+  "XCSH_CLIENT_CERT_FILE": {
+    "type": "text",
+    "default": "<XCSH_CLIENT_CERT_FILE>",
+    "description": "Client leaf certificate path",
+    "credential": false,
+    "scope": "client-cert-file",
+    "hint": "Enter an absolute local path outside Git. Enter only the path, never private key or database contents. Paths are literal; shell variables and ~ are not expanded."
+  },
+  "XCSH_CLIENT_KEY_FILE": {
+    "type": "text",
+    "default": "<XCSH_CLIENT_KEY_FILE>",
+    "description": "Client matching key path",
+    "credential": false,
+    "scope": "client-key-file",
+    "hint": "Enter an absolute local path outside Git. Enter only the path, never private key or database contents. Paths are literal; shell variables and ~ are not expanded."
+  },
+  "XCSH_CLIENT_CA_FILE": {
+    "type": "text",
+    "default": "<XCSH_CLIENT_CA_FILE>",
+    "description": "Frontend client trusted CA bundle path",
+    "credential": false,
+    "scope": "client-ca-file",
+    "hint": "Enter an absolute local path outside Git. Enter only the path, never private key or database contents. Paths are literal; shell variables and ~ are not expanded."
+  },
+  "XCSH_CLIENT_CRL_FILE": {
+    "type": "text",
+    "default": "<XCSH_CLIENT_CRL_FILE>",
+    "description": "Public signed client CRL bundle path",
+    "credential": false,
+    "scope": "client-crl-file",
+    "hint": "Enter an absolute local path outside Git. Enter only the path, never private key or database contents. Paths are literal; shell variables and ~ are not expanded."
+  },
+  "XCSH_CLIENT_CRL_REVISION": {
+    "type": "text",
+    "default": "<XCSH_CLIENT_CRL_REVISION>",
+    "description": "Immutable client CRL revision",
+    "credential": false,
+    "scope": "client-crl-revision",
+    "hint": "Use a lower-case synthetic name. Keep CRL revision names immutable; publish new signed bytes at a new revision."
+  },
+  "XCSH_CLIENT_CA_DIR": {
+    "type": "text",
+    "default": "<XCSH_CLIENT_CA_DIR>",
+    "description": "Private synthetic client CA database directory",
+    "credential": false,
+    "scope": "client-ca-dir",
+    "hint": "Enter an absolute local path outside Git. Enter only the path, never private key or database contents. Paths are literal; shell variables and ~ are not expanded."
+  },
+  "XCSH_CLIENT_NAME": {
+    "type": "text",
+    "default": "<XCSH_CLIENT_NAME>",
+    "description": "Synthetic client issuance name",
+    "credential": false,
+    "scope": "client-name",
+    "hint": "Use a lower-case synthetic name. Keep CRL revision names immutable; publish new signed bytes at a new revision."
   }
 }
