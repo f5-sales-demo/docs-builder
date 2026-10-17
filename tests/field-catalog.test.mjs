@@ -83,3 +83,27 @@ test('Wingman fields retain independent identities, placeholders and literal she
   assert.match(command, /reader-context/);
   assert.match(command, /reader/);
 });
+
+test('client mTLS fields keep frontend, origin and server material distinct', () => {
+  const names = [
+    'XCSH_CLIENT_CERT_FILE',
+    'XCSH_CLIENT_KEY_FILE',
+    'XCSH_CLIENT_CA_FILE',
+    'XCSH_CLIENT_CRL_FILE',
+    'XCSH_CLIENT_CRL_REVISION',
+    'XCSH_CLIENT_CA_DIR',
+    'XCSH_CLIENT_NAME',
+  ];
+  const definition = resolveManifest({ version: 2, fields: names }, catalog);
+  const scopes = names.map((name) => definition.fields[name].scope);
+  assert.equal(new Set(scopes).size, names.length);
+  for (const name of names) {
+    assert.equal(catalog[name].credential, false);
+    assert.equal(catalog[name].default, '<' + name + '>');
+    assert.notEqual(catalog[name].scope, catalog.XCSH_CERT_FILE.scope);
+    assert.notEqual(catalog[name].scope, catalog.XCSH_ORIGIN_CA_FILE.scope);
+  }
+  for (const name of names.filter((name) => /FILE|DIR/.test(name))) {
+    assert.match(catalog[name].hint, /outside Git/);
+  }
+});
