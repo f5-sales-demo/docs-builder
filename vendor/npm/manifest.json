@@ -3,10 +3,10 @@
   "artifacts": [
     {
       "name": "@f5-sales-demo/docs-theme",
-      "version": "4.13.21",
-      "file": "docs-theme-4.13.21.tgz",
-      "integrity": "sha512-XVEY8v2RNVgjp8c7QOY7biG1HE9ZFDScZpOLtjdBg8PsTtn2QHa1kndV0Pdcnu284mJHx67VfVMQYUzwqPW52Q==",
-      "source": "https://github.com/f5-sales-demo/docs-theme/releases/download/v4.13.21/f5-sales-demo-docs-theme-4.13.21.tgz"
+      "version": "4.13.22",
+      "file": "docs-theme-4.13.22.tgz",
+      "integrity": "sha512-JQ/3Nfbb5LXCQDnP7ktBaH0Bc9XJjZxzVhSoyIB1ZPgjguUoWkWtY9PZUgHqJqkwMLSZ15KevtPnpRrtJMwoBQ==",
+      "source": "https://registry.npmjs.org/@f5-sales-demo/docs-theme/-/docs-theme-4.13.22.tgz"
     },
     {
       "name": "@f5-sales-demo/starlight-llms-txt",

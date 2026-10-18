@@ -1,0 +1,72 @@
+---
+name: Refresh Latest Theme Source
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 * * * *'
+  push:
+    branches: [main]
+    paths: ['package.json', 'package-lock.json', 'vendor/npm/**']
+
+permissions: {}
+
+concurrency:
+  group: refresh-latest-theme-source
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    name: Refresh verified latest theme source
+    if: github.ref == 'refs/heads/main' && github.ref_protected
+    runs-on: docs-socketless
+    environment: release
+    permissions:
+      contents: read # inspect only the protected source checkout
+    env:
+      GH_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Resolve and verify current upstream source
+        run: python3 scripts/refresh_latest_theme.py
+
+      - name: Format generated source receipts
+        run: npx --yes @biomejs/biome format --write package.json package-lock.json vendor/npm/manifest.json
+
+      - name: Open or update a linked source refresh
+        env:
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- package.json package-lock.json vendor/npm; then
+            if [[ "$GITHUB_EVENT_NAME" == push ]]; then
+              gh workflow run build-image.yml --ref main -f dispatch_downstream=false
+            fi
+            exit 0
+          fi
+          version=$(python3 -c 'import json; print(next(x["version"] for x in json.load(open("vendor/npm/manifest.json"))["artifacts"] if x["name"] == "@f5-sales-demo/docs-theme"))')
+          branch=automation/latest-theme-source
+          existing=$(gh pr list --head "$branch" --state open --json number --jq '.[0].number // empty')
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          gh auth setup-git
+          git fetch origin --prune '+refs/heads/*:refs/remotes/origin/*'
+          git checkout -B "$branch"
+          git add package.json package-lock.json
+          git add -u -- vendor/npm
+          git add -f -- "vendor/npm/docs-theme-${version}.tgz"
+          git commit -m 'build: refresh verified latest theme source'
+          git push --force-with-lease --set-upstream origin "$branch"
+          if [[ -z "$existing" ]]; then
+            issue_url=$(gh issue create --title "Refresh builder from latest published theme ${version}" \
+              --body 'Resolve GitHub and npm latest, verify package identity and archive integrity, pass source/image CI, publish from protected main, and qualify current consumers. This is an automatically resolved source receipt, not a fixed future component selector.')
+            issue=${issue_url##*/}
+            body_file=$(mktemp)
+            python3 -c 'import pathlib,sys; pathlib.Path(sys.argv[1]).write_text("The builder now consumes the independently resolved latest theme publication, with matching package identity and npm archive integrity. Other vendored ownership is preserved.\n\nValidation: source integrity and package checks passed; lockfile regenerated normally. CI and protected-main image qualification remain required.\n\nCloses #"+sys.argv[2]+"\n")' "$body_file" "$issue"
+            pr_url=$(gh pr create --head "$branch" --title 'build: refresh verified latest theme source' --body-file "$body_file")
+            rm "$body_file"
+            existing=${pr_url##*/}
+          fi
+          gh pr merge "$existing" --auto --squash
