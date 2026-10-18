@@ -7,15 +7,52 @@ import PlaceholderFormWrapper from '../components/PlaceholderFormWrapper.astro';
 <ThemeMarkdownContent><slot /></ThemeMarkdownContent>
 
 <script>
-  import { restoreCertificateOverview } from '../lib/certificate-toc.mjs';
+  import { configureCertificateReadingBand, restoreCertificateOverview, selectCertificateFragment } from '../lib/certificate-toc.mjs';
   const restoreOverview = () => restoreCertificateOverview(
     import.meta.env.F5_DOCS_REPOSITORY,
     window.scrollY,
     document.querySelectorAll('starlight-toc, mobile-starlight-toc'),
   );
   window.addEventListener('scroll', restoreOverview, { passive: true });
-  Promise.all([
-    customElements.whenDefined('starlight-toc'),
-    customElements.whenDefined('mobile-starlight-toc'),
-  ]).then(restoreOverview);
+  const selectFragment = () => selectCertificateFragment(
+    import.meta.env.F5_DOCS_REPOSITORY,
+    location.hash,
+    document.querySelectorAll("starlight-toc, mobile-starlight-toc"),
+    (id) => {
+      const target = document.getElementById(id);
+      if (!target) return false;
+      const bounds = target.getBoundingClientRect();
+      return bounds.bottom > 0 && bounds.top < innerHeight;
+    },
+  );
+  window.addEventListener("hashchange", () => setTimeout(selectFragment, 50));
+  let breadcrumbObserver;
+  const configureReadingBand = () => {
+    const breadcrumb = document.querySelector(".breadcrumbs[data-certificate-management]");
+    if (!breadcrumb) return;
+    configureCertificateReadingBand(
+      import.meta.env.F5_DOCS_REPOSITORY,
+      document.querySelectorAll("starlight-toc, mobile-starlight-toc"),
+      () => document.querySelector(".breadcrumbs[data-certificate-management]")?.getBoundingClientRect().height || 0,
+    );
+    breadcrumbObserver?.disconnect();
+    let previousHeight;
+    breadcrumbObserver = new ResizeObserver(() => {
+      const height = breadcrumb.getBoundingClientRect().height;
+      if (height === previousHeight) return;
+      previousHeight = height;
+      // Recreate native intersections using their existing resize lifecycle.
+      window.dispatchEvent(new Event("resize"));
+    });
+    breadcrumbObserver.observe(breadcrumb);
+    restoreOverview();
+    setTimeout(selectFragment, 300);
+  };
+  const prepareToc = () => Promise.all([
+    customElements.whenDefined("starlight-toc"),
+    customElements.whenDefined("mobile-starlight-toc"),
+  ]).then(configureReadingBand);
+  prepareToc();
+  document.addEventListener("astro:page-load", prepareToc);
+
 </script>
