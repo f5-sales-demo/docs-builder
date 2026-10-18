@@ -138,7 +138,9 @@ def main() -> None:
     with urllib.request.urlopen(request, timeout=30) as response:  # noqa: S310 -- Fixed HTTPS GitHub publication endpoint.
         release = json.load(response)
     npm = shutil.which("npm")
-    require(npm is not None, "npm executable is unavailable")
+    if npm is None:
+        message = "npm executable is unavailable"
+        raise ValueError(message)
     result = subprocess.run(  # noqa: S603 -- Verified executable, fixed package and argument array.
         [npm, "view", THEME + "@latest", "--json"],
         check=True,
