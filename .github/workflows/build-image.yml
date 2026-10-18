@@ -32,6 +32,11 @@ jobs:
       - name: Audit production dependencies
         run: npm audit --omit=dev --audit-level=high
 
+      - name: Verify latest theme source
+        run: python3 scripts/check_latest_theme.py
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Set image coordinates
         shell: bash
         run: |
