@@ -12,9 +12,13 @@ PACKAGE_JSON="$REPO_ROOT/package.json"
 PACKAGE_LOCK="$REPO_ROOT/package-lock.json"
 
 python3 - "$WORKFLOW" "$PAGES_WORKFLOW" "$LINTER_WORKFLOW" "$CONTAINER_SMOKE" "$TOOL_CACHE_SMOKE" "$DOCKERFILE" "$PACKAGE_JSON" "$PACKAGE_LOCK" <<'PY'
+import base64
+import hashlib
 import json
 import re
 import sys
+import tarfile
+from pathlib import Path
 
 import yaml
 
@@ -85,19 +89,34 @@ if "Resolve latest docs-theme" in names:
 if steps[audit_index].get("run") != "npm audit --omit=dev --audit-level=high":
     raise SystemExit("production audit must fail on high or critical advisories")
 
-expected_builder_version = "1.12.2"
-expected_theme_version = "4.13.15"
-expected_theme_dependency = "file:vendor/npm/docs-theme-4.13.15.tgz"
-if package.get("version") != expected_builder_version:
-    raise SystemExit(f"docs-builder package version must be {expected_builder_version}")
-if package_lock.get("version") != expected_builder_version:
-    raise SystemExit(f"docs-builder lockfile version must be {expected_builder_version}")
-if package.get("dependencies", {}).get("@f5-sales-demo/docs-theme") != expected_theme_dependency:
-    raise SystemExit(f"docs-theme must be pinned exactly to {expected_theme_version}")
+expected_builder_version = package.get("version", "")
+if not re.fullmatch(r"(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)", expected_builder_version):
+    raise SystemExit("docs-builder package version must be a valid semantic version")
+if package_lock.get("version") != expected_builder_version or package_lock["packages"][""].get("version") != expected_builder_version:
+    raise SystemExit("docs-builder package and lockfile versions must agree")
+expected_theme_dependency = package.get("dependencies", {}).get("@f5-sales-demo/docs-theme", "")
+theme_identity = re.fullmatch(r"file:vendor/npm/docs-theme-((?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*))\.tgz", expected_theme_dependency)
+if theme_identity is None:
+    raise SystemExit("docs-theme build input must identify its verified source archive")
+expected_theme_version = theme_identity[1]
+theme_lock = package_lock["packages"]["node_modules/@f5-sales-demo/docs-theme"]
 if package_lock["packages"][""]["dependencies"].get("@f5-sales-demo/docs-theme") != expected_theme_dependency:
-    raise SystemExit(f"lockfile root must pin docs-theme exactly to {expected_theme_version}")
-if package_lock["packages"]["node_modules/@f5-sales-demo/docs-theme"].get("version") != expected_theme_version:
-    raise SystemExit(f"lockfile must resolve docs-theme {expected_theme_version}")
+    raise SystemExit("lockfile root must match the resolved theme source")
+if theme_lock.get("version") != expected_theme_version or theme_lock.get("resolved") != expected_theme_dependency:
+    raise SystemExit("lockfile must match the resolved theme archive identity")
+repository = Path(sys.argv[7]).parent
+theme_file = repository / expected_theme_dependency.removeprefix("file:")
+manifest = json.loads((repository / "vendor/npm/manifest.json").read_text())
+theme_receipt, = [entry for entry in manifest["artifacts"] if entry["name"] == "@f5-sales-demo/docs-theme"]
+integrity = "sha512-" + base64.b64encode(hashlib.sha512(theme_file.read_bytes()).digest()).decode()
+if theme_receipt.get("version") != expected_theme_version or theme_receipt.get("file") != theme_file.name:
+    raise SystemExit("theme manifest must match the resolved archive identity")
+if theme_receipt.get("integrity") != integrity or theme_lock.get("integrity") != integrity:
+    raise SystemExit("theme archive must match both manifest and lockfile integrity")
+with tarfile.open(theme_file) as archive:
+    archive_package = json.load(archive.extractfile("package/package.json"))
+if archive_package.get("version") != expected_theme_version:
+    raise SystemExit("theme archive package must match its recorded version")
 
 publish = steps[publish_index]
 if publish.get("if") != "github.ref == 'refs/heads/main' && github.ref_protected":
