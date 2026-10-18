@@ -12,14 +12,22 @@ def verify_latest_source(manifest: dict[str, Any], release: dict[str, Any]) -> s
     """Reject stale source even when its local receipts are internally consistent."""
     tag = release.get("tag_name")
     if not isinstance(tag, str) or not re.fullmatch(r"v[0-9]+\.[0-9]+\.[0-9]+", tag):
-        raise ValueError("Latest theme release has no valid version identity")
+        message = "Latest theme release has no valid version identity"
+        raise ValueError(message)
     if release.get("draft") is not False or release.get("prerelease") is not False:
-        raise ValueError("Latest theme must be a completed published release")
-    sources = [entry for entry in manifest["artifacts"] if entry["name"] == "@f5-sales-demo/docs-theme"]
+        message = "Latest theme must be a completed published release"
+        raise ValueError(message)
+    sources = [
+        entry
+        for entry in manifest["artifacts"]
+        if entry["name"] == "@f5-sales-demo/docs-theme"
+    ]
     if len(sources) != 1:
-        raise ValueError("The theme must have exactly one source receipt")
+        message = "The theme must have exactly one source receipt"
+        raise ValueError(message)
     if sources[0].get("version") != tag[1:]:
-        raise ValueError(f"Theme source must be refreshed to latest {tag}")
+        message = f"Theme source must be refreshed to latest {tag}"
+        raise ValueError(message)
     return tag[1:]
 
 
@@ -35,10 +43,10 @@ def main() -> None:
         "https://api.github.com/repos/f5-sales-demo/docs-theme/releases/latest",
         headers=headers,
     )
-    with urllib.request.urlopen(request, timeout=30) as response:
+    with urllib.request.urlopen(request, timeout=30) as response:  # noqa: S310 -- Fixed HTTPS GitHub endpoint.
         release = json.load(response)
     version = verify_latest_source(manifest, release)
-    print(f"Latest docs-theme source verified: {version}")  # noqa: T201 -- CLI result.
+    print(f"Latest docs-theme source verified: {version}")
 
 
 if __name__ == "__main__":
