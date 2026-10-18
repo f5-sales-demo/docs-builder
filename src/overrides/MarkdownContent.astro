@@ -5,3 +5,17 @@ import PlaceholderFormWrapper from '../components/PlaceholderFormWrapper.astro';
 
 <PlaceholderFormWrapper />
 <ThemeMarkdownContent><slot /></ThemeMarkdownContent>
+
+<script>
+  import { restoreCertificateOverview } from '../lib/certificate-toc.mjs';
+  const restoreOverview = () => restoreCertificateOverview(
+    import.meta.env.F5_DOCS_REPOSITORY,
+    window.scrollY,
+    document.querySelectorAll('starlight-toc, mobile-starlight-toc'),
+  );
+  window.addEventListener('scroll', restoreOverview, { passive: true });
+  Promise.all([
+    customElements.whenDefined('starlight-toc'),
+    customElements.whenDefined('mobile-starlight-toc'),
+  ]).then(restoreOverview);
+</script>
