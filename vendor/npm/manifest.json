@@ -3,10 +3,10 @@
   "artifacts": [
     {
       "name": "@f5-sales-demo/docs-theme",
-      "version": "4.13.22",
-      "file": "docs-theme-4.13.22.tgz",
-      "integrity": "sha512-JQ/3Nfbb5LXCQDnP7ktBaH0Bc9XJjZxzVhSoyIB1ZPgjguUoWkWtY9PZUgHqJqkwMLSZ15KevtPnpRrtJMwoBQ==",
-      "source": "https://registry.npmjs.org/@f5-sales-demo/docs-theme/-/docs-theme-4.13.22.tgz"
+      "version": "4.13.28",
+      "file": "docs-theme-4.13.28.tgz",
+      "integrity": "sha512-ZFK2OuVGdwfiSxR8fx08fnUme21gpu37o1mxD3HyglNZIKFJsoNQyqLVLNqLmbkWqmdcv+TE/XQQ2/kvT5rtAA==",
+      "source": "https://registry.npmjs.org/@f5-sales-demo/docs-theme/-/docs-theme-4.13.28.tgz"
     },
     {
       "name": "@f5-sales-demo/starlight-llms-txt",
