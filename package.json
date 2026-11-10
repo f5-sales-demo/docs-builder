@@ -1,7 +1,7 @@
 {
   "name": "docs-builder",
   "type": "module",
-  "version": "1.12.5",
+  "version": "1.12.6",
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",
@@ -22,7 +22,7 @@
     "@astrojs/markdown-remark": "7.2.4",
     "@astrojs/react": "^6.0.4",
     "@astrojs/starlight": "0.41.9",
-    "@f5-sales-demo/docs-theme": "file:vendor/npm/docs-theme-4.13.22.tgz",
+    "@f5-sales-demo/docs-theme": "file:vendor/npm/docs-theme-4.13.28.tgz",
     "@f5-sales-demo/icons-aws": "*",
     "@f5-sales-demo/icons-azure": "*",
     "@f5-sales-demo/icons-carbon": "*",
@@ -35,7 +35,7 @@
     "@f5-sales-demo/icons-phosphor": "*",
     "@f5-sales-demo/icons-simple-icons": "*",
     "@f5-sales-demo/icons-tabler": "*",
-    "@f5-sales-demo/starlight-llms-txt": "file:vendor/npm/starlight-llms-txt-2.4.0.tgz",
+    "@f5-sales-demo/starlight-llms-txt": "file:vendor/npm/starlight-llms-txt-2.4.1.tgz",
     "@hashicorp/flight-icons": "^5.1.0",
     "@iconify-json/carbon": "^1.2.25",
     "@iconify-json/lucide": "^1.2.126",
@@ -73,7 +73,7 @@
     "astro": "$astro",
     "ai": "6.0.286",
     "@ai-sdk/provider-utils": "4.0.51",
-    "undici": "7.29.1",
+    "undici": "7.30.2",
     "braces": "$braces",
     "http-cache-semantics": "$http-cache-semantics",
     "@f5-sales-demo/starlight-llms-txt": "$@f5-sales-demo/starlight-llms-txt"

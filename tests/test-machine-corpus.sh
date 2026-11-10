@@ -186,6 +186,9 @@ manifest = {
     },
     "documents": documents,
     "assets": assets,
+    "refresh": {"artifact_sha256": "a" * 64, "preserved_descriptions": []},
+    "aliases": [{"path": "content/source-a/old-guide/index.md",
+        "target": "content/source-a/guide/index.md", "url": "https://source-a.example.invalid/old-guide"}],
 }
 (root / "manifest.json").write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 members = sorted(path for path in root.rglob("*") if path.is_file())
@@ -197,6 +200,9 @@ checksums = "".join(
 (root / ".enrichment").mkdir()
 (root / ".enrichment/private.json").write_text("PRIVATE_ENRICHMENT_EVIDENCE")
 (root / "enrichment-state.json").write_text("PRIVATE_ENRICHMENT_STATE")
+(root / ".refresh").mkdir()
+(root / ".refresh/private.json").write_text("PRIVATE_REFRESH_EVIDENCE")
+(root / "refresh-state.json").write_text("PRIVATE_REFRESH_STATE")
 PY
 
 run_builder() {
@@ -239,6 +245,9 @@ test -f "$OUTPUT_ONE/snapshot/manifest.json"
 test -f "$OUTPUT_ONE/snapshot/SHA256SUMS"
 test ! -e "$OUTPUT_ONE/snapshot/.enrichment"
 test ! -e "$OUTPUT_ONE/snapshot/enrichment-state.json"
+test ! -e "$OUTPUT_ONE/snapshot/.refresh"
+test ! -e "$OUTPUT_ONE/snapshot/refresh-state.json"
+cmp "$OUTPUT_ONE/_llms-txt/source-a/guide.txt" "$OUTPUT_ONE/_llms-txt/source-a/old-guide.txt"
 test -f "$OUTPUT_ONE/snapshot/quality-report.json"
 test -f "$OUTPUT_ONE/snapshot/provenance.md"
 test -f "$OUTPUT_ONE/snapshot/content/source-a/guide/assets/a.png"
