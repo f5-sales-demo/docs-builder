@@ -10,10 +10,10 @@
     },
     {
       "name": "@f5-sales-demo/starlight-llms-txt",
-      "version": "2.4.1",
-      "file": "starlight-llms-txt-2.4.1.tgz",
-      "integrity": "sha512-8+NQcxyQ8gdyrEGD97zziemrTxGfBHqJzlAxItZHMvaaq4vaNOoa0MnjjklvSWf5NxPMiHgwGh3ghGn7Ge5Jvg==",
-      "source": "https://github.com/f5-sales-demo/starlight-llms-txt/tree/aa2509a9f1cdd01f59e4ab2bc7f932a52a3e07eb/packages/starlight-llms-txt"
+      "version": "2.5.0",
+      "file": "starlight-llms-txt-2.5.0.tgz",
+      "integrity": "sha512-kTmOxMANYsWIZzE0xuqm8v+RM+nfV4Pa4ijJuiwJ2fOtxIQG0GSE3oJDYj2uvvqX0WSX/8MGdMavzt3BAqBtIw==",
+      "source": "https://registry.npmjs.org/@f5-sales-demo/starlight-llms-txt/-/starlight-llms-txt-2.5.0.tgz"
     }
   ]
 }

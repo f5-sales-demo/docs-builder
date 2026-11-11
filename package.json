@@ -1,7 +1,7 @@
 {
   "name": "docs-builder",
   "type": "module",
-  "version": "1.12.6",
+  "version": "1.13.0",
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",
@@ -35,7 +35,7 @@
     "@f5-sales-demo/icons-phosphor": "*",
     "@f5-sales-demo/icons-simple-icons": "*",
     "@f5-sales-demo/icons-tabler": "*",
-    "@f5-sales-demo/starlight-llms-txt": "file:vendor/npm/starlight-llms-txt-2.4.1.tgz",
+    "@f5-sales-demo/starlight-llms-txt": "file:vendor/npm/starlight-llms-txt-2.5.0.tgz",
     "@hashicorp/flight-icons": "^5.1.0",
     "@iconify-json/carbon": "^1.2.25",
     "@iconify-json/lucide": "^1.2.126",
