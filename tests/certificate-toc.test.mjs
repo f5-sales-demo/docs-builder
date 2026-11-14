@@ -3,7 +3,9 @@ import test from 'node:test';
 import {
   configureCertificateFragmentSelection,
   configureCertificateReadingBand,
+  createCertificateBookmarkTracker,
   restoreCertificateOverview,
+  restoreCertificateReadingPosition,
   selectCertificateFragment,
   selectCertificateFragmentAfterLayout,
 } from '../src/lib/certificate-toc.mjs';
@@ -152,6 +154,7 @@ test('normal native tracking resumes when the heading can reach the band or leav
     scrollY: 0,
     maxScroll: 1000,
     readingTop: 160,
+    readerScrolled: true,
   };
   configureCertificateFragmentSelection('f5-sales-demo/certificate-management', [component], () => geometry);
   component.current = overview;
@@ -205,4 +208,102 @@ test('fragment guards retain native setters, install once, and do not affect oth
   component.current = overview;
   assert.equal(component.selected, workflow);
   assert.equal(component.label, '#workflow');
+});
+
+test('explicit long-page bookmarks survive delayed native updates until the reader scrolls', () => {
+  const overview = { hash: '#_top' };
+  const recover = { hash: '#recover-interrupted-changes' };
+  const component = new NativeToc([overview, recover]);
+  const geometry = {
+    hash: recover.hash,
+    top: 245,
+    bottom: 282,
+    height: 1000,
+    scrollY: 1200,
+    maxScroll: 2000,
+    readingTop: 160,
+  };
+  configureCertificateFragmentSelection('f5-sales-demo/certificate-management', [component], () => geometry);
+  component.current = recover;
+  component.current = overview;
+  assert.equal(component.current, recover);
+  geometry.scrollY += 100;
+  geometry.readerScrolled = true;
+  component.current = overview;
+  assert.equal(component.current, overview);
+  geometry.readerScrolled = false;
+  component.current = recover;
+  geometry.top = -100;
+  geometry.bottom = -63;
+  component.current = overview;
+  assert.equal(component.current, overview);
+});
+
+test('manual scrolling releases short-page bookmark preference without changing the hash', () => {
+  const overview = { hash: '#_top' };
+  const workflow = { hash: '#workflow' };
+  const component = new NativeToc([overview, workflow]);
+  const geometry = {
+    hash: workflow.hash,
+    top: 558,
+    bottom: 595,
+    height: 1000,
+    scrollY: 0,
+    maxScroll: 149,
+    readingTop: 160,
+  };
+  configureCertificateFragmentSelection('f5-sales-demo/certificate-management', [component], () => geometry);
+  component.current = workflow;
+  geometry.scrollY = 100;
+  geometry.readerScrolled = true;
+  component.current = overview;
+  assert.equal(component.current, overview);
+});
+
+test('layout scrolls retain bookmark intent while reader scroll gestures release it', () => {
+  const tracker = createCertificateBookmarkTracker();
+  tracker.observeScroll();
+  assert.equal(tracker.hasReaderScrolled(), false);
+  tracker.prepareScroll();
+  tracker.observeScroll();
+  assert.equal(tracker.hasReaderScrolled(), true);
+  tracker.beginNavigation();
+  assert.equal(tracker.hasReaderScrolled(), false);
+  tracker.prepareScroll();
+  tracker.clearIntent();
+  tracker.observeScroll();
+  assert.equal(tracker.hasReaderScrolled(), false);
+});
+
+test('only the first reader scroll requests native observer refresh', () => {
+  const tracker = createCertificateBookmarkTracker();
+  assert.equal(tracker.observeScroll(), false);
+  tracker.prepareScroll();
+  assert.equal(tracker.observeScroll(), true);
+  assert.equal(tracker.observeScroll(), false);
+  tracker.beginNavigation();
+  tracker.prepareScroll();
+  assert.equal(tracker.observeScroll(), true);
+});
+
+test('resuming scroll selects the nearest heading before the native reading band', () => {
+  const overview = { hash: '#_top' };
+  const setup = { hash: '#setup' };
+  const recover = { hash: '#recover' };
+  const component = new NativeToc([overview, setup, recover]);
+  component.getRootMargin = () => '-160px 0% -787px';
+  const bounds = {
+    _top: { top: -900, height: 40 },
+    setup: { top: -100, height: 37 },
+    recover: { top: 700, height: 37 },
+  };
+  component.current = recover;
+  restoreCertificateReadingPosition('f5-sales-demo/certificate-management', [component], (id) => bounds[id]);
+  assert.equal(component.current, setup);
+  bounds.setup.top = 300;
+  restoreCertificateReadingPosition('f5-sales-demo/certificate-management', [component], (id) => bounds[id]);
+  assert.equal(component.current, overview);
+  component.current = recover;
+  restoreCertificateReadingPosition('f5-sales-demo/xcsh', [component], (id) => bounds[id]);
+  assert.equal(component.current, recover);
 });
