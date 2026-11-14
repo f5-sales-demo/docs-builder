@@ -43,3 +43,9 @@ export function selectCertificateFragment(repository, hash, components, isVisibl
     if (link) component.current = link;
   }
 }
+
+/** Select a bookmarked heading after font loading and native layout updates settle. */
+export async function selectCertificateFragmentAfterLayout(repository, hash, components, isVisible, waitForLayout) {
+  await waitForLayout();
+  selectCertificateFragment(repository, hash, components, isVisible);
+}

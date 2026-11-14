@@ -4,6 +4,7 @@ import {
   configureCertificateReadingBand,
   restoreCertificateOverview,
   selectCertificateFragment,
+  selectCertificateFragmentAfterLayout,
 } from '../src/lib/certificate-toc.mjs';
 
 test('returning above the first content section resets desktop and mobile section state', () => {
@@ -64,4 +65,27 @@ test('Visible fragments synchronize native state on short pages and reloads', ()
   selectCertificateFragment('f5-sales-demo/xcsh', '#set-api-credentials', [component], () => true);
   selectCertificateFragment('f5-sales-demo/certificate-management', '#%', [component], () => true);
   assert.equal(component.current, previous);
+});
+
+test('bookmarked sections wait for font/layout readiness before selecting native state', async () => {
+  let ready;
+  let visible = false;
+  const layout = new Promise((resolve) => {
+    ready = resolve;
+  });
+  const selected = { hash: '#interception-signing-ca', textContent: 'Interception signing CA' };
+  const initial = { textContent: 'Overview' };
+  const component = { current: initial, querySelectorAll: () => [selected] };
+  const pending = selectCertificateFragmentAfterLayout(
+    'f5-sales-demo/certificate-management',
+    '#interception-signing-ca',
+    [component],
+    () => visible,
+    () => layout,
+  );
+  assert.equal(component.current, initial);
+  visible = true;
+  ready();
+  await pending;
+  assert.equal(component.current, selected);
 });
