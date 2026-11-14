@@ -7,14 +7,14 @@ import PlaceholderFormWrapper from '../components/PlaceholderFormWrapper.astro';
 <ThemeMarkdownContent><slot /></ThemeMarkdownContent>
 
 <script>
-  import { configureCertificateReadingBand, restoreCertificateOverview, selectCertificateFragment } from '../lib/certificate-toc.mjs';
+  import { configureCertificateReadingBand, restoreCertificateOverview, selectCertificateFragmentAfterLayout } from '../lib/certificate-toc.mjs';
   const restoreOverview = () => restoreCertificateOverview(
     import.meta.env.F5_DOCS_REPOSITORY,
     window.scrollY,
     document.querySelectorAll('starlight-toc, mobile-starlight-toc'),
   );
   window.addEventListener('scroll', restoreOverview, { passive: true });
-  const selectFragment = () => selectCertificateFragment(
+  const selectFragment = () => selectCertificateFragmentAfterLayout(
     import.meta.env.F5_DOCS_REPOSITORY,
     location.hash,
     document.querySelectorAll("starlight-toc, mobile-starlight-toc"),
@@ -24,8 +24,19 @@ import PlaceholderFormWrapper from '../components/PlaceholderFormWrapper.astro';
       const bounds = target.getBoundingClientRect();
       return bounds.bottom > 0 && bounds.top < innerHeight;
     },
+    async () => {
+      await Promise.all([
+        document.fonts.ready,
+        new Promise<void>((resolve) => {
+          if (document.readyState === "complete") resolve();
+          else window.addEventListener("load", () => resolve(), { once: true });
+        }),
+      ]);
+      await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+    },
   );
-  window.addEventListener("hashchange", () => setTimeout(selectFragment, 50));
+  window.addEventListener("hashchange", selectFragment);
+  window.addEventListener("pageshow", selectFragment);
   let breadcrumbObserver;
   const configureReadingBand = () => {
     const breadcrumb = document.querySelector(".breadcrumbs[data-certificate-management]");
@@ -43,10 +54,11 @@ import PlaceholderFormWrapper from '../components/PlaceholderFormWrapper.astro';
       previousHeight = height;
       // Recreate native intersections using their existing resize lifecycle.
       window.dispatchEvent(new Event("resize"));
+      selectFragment();
     });
     breadcrumbObserver.observe(breadcrumb);
     restoreOverview();
-    setTimeout(selectFragment, 300);
+    selectFragment();
   };
   const prepareToc = () => Promise.all([
     customElements.whenDefined("starlight-toc"),
