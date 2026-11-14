@@ -52,11 +52,11 @@ export async function selectCertificateFragmentAfterLayout(repository, hash, com
 
 const configuredFragmentSelection = new WeakSet();
 
-function unreachableFragment(component, snapshot) {
-  if (!snapshot?.hash) return;
-  const { top, bottom, height, scrollY, maxScroll, readingTop } = snapshot;
-  if (![top, bottom, height, scrollY, maxScroll, readingTop].every(Number.isFinite)) return;
-  if (bottom <= 0 || top >= height || top + scrollY - maxScroll <= readingTop) return;
+function preferredFragment(component, snapshot) {
+  if (!snapshot?.hash || snapshot.readerScrolled) return;
+  const { top, bottom, height } = snapshot;
+  if (![top, bottom, height].every(Number.isFinite)) return;
+  if (bottom <= 0 || top >= height) return;
   let id;
   try {
     id = decodeURIComponent(snapshot.hash.slice(1));
@@ -66,7 +66,33 @@ function unreachableFragment(component, snapshot) {
   return [...component.querySelectorAll('a[href]')].find((link) => link.hash === `#${encodeURIComponent(id)}`);
 }
 
-/** Preserve visible bookmarks that cannot reach the native band on short pages. */
+/** Distinguish layout restoration from scrolling requested by the reader. */
+export function createCertificateBookmarkTracker() {
+  let intent = false;
+  let readerScrolled = false;
+  return {
+    prepareScroll() {
+      intent = true;
+    },
+    clearIntent() {
+      intent = false;
+    },
+    observeScroll() {
+      if (!intent || readerScrolled) return false;
+      readerScrolled = true;
+      return true;
+    },
+    beginNavigation() {
+      intent = false;
+      readerScrolled = false;
+    },
+    hasReaderScrolled() {
+      return readerScrolled;
+    },
+  };
+}
+
+/** Preserve explicit visible bookmarks until scrolling resumes native tracking. */
 export function configureCertificateFragmentSelection(repository, components, getFragment) {
   if (repository !== 'f5-sales-demo/certificate-management') return 0;
   let configured = 0;
@@ -85,11 +111,33 @@ export function configureCertificateFragmentSelection(repository, components, ge
       configurable: true,
       get: descriptor.get,
       set(link) {
-        native.call(this, unreachableFragment(this, getFragment(this)) || link);
+        native.call(this, preferredFragment(this, getFragment(this)) || link);
       },
     });
     configuredFragmentSelection.add(component);
     configured++;
   }
   return configured;
+}
+
+/** Restore the native reading position before re-observing after reader input. */
+export function restoreCertificateReadingPosition(repository, components, getBounds) {
+  if (repository !== 'f5-sales-demo/certificate-management') return;
+  for (const component of components) {
+    if (typeof component.getRootMargin !== 'function') continue;
+    const end = -parseFloat(component.getRootMargin()) + 53;
+    const links = [...component.querySelectorAll('a[href]')];
+    let selected = links.find((link) => link.hash === '#_top');
+    for (const link of links) {
+      let id;
+      try {
+        id = decodeURIComponent(link.hash.slice(1));
+      } catch {
+        continue;
+      }
+      const bounds = getBounds(id);
+      if (bounds && bounds.height > 0 && bounds.top <= end) selected = link;
+    }
+    if (selected) component.current = selected;
+  }
 }
