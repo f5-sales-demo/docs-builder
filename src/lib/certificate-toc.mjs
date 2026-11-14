@@ -49,3 +49,47 @@ export async function selectCertificateFragmentAfterLayout(repository, hash, com
   await waitForLayout();
   selectCertificateFragment(repository, hash, components, isVisible);
 }
+
+const configuredFragmentSelection = new WeakSet();
+
+function unreachableFragment(component, snapshot) {
+  if (!snapshot?.hash) return;
+  const { top, bottom, height, scrollY, maxScroll, readingTop } = snapshot;
+  if (![top, bottom, height, scrollY, maxScroll, readingTop].every(Number.isFinite)) return;
+  if (bottom <= 0 || top >= height || top + scrollY - maxScroll <= readingTop) return;
+  let id;
+  try {
+    id = decodeURIComponent(snapshot.hash.slice(1));
+  } catch {
+    return;
+  }
+  return [...component.querySelectorAll('a[href]')].find((link) => link.hash === `#${encodeURIComponent(id)}`);
+}
+
+/** Preserve visible bookmarks that cannot reach the native band on short pages. */
+export function configureCertificateFragmentSelection(repository, components, getFragment) {
+  if (repository !== 'f5-sales-demo/certificate-management') return 0;
+  let configured = 0;
+  for (const component of components) {
+    if (configuredFragmentSelection.has(component)) continue;
+    let owner = component;
+    let descriptor;
+    while (owner) {
+      descriptor = Object.getOwnPropertyDescriptor(owner, 'current');
+      if (descriptor?.set) break;
+      owner = Object.getPrototypeOf(owner);
+    }
+    if (!descriptor?.set) continue;
+    const native = descriptor.set;
+    Object.defineProperty(component, 'current', {
+      configurable: true,
+      get: descriptor.get,
+      set(link) {
+        native.call(this, unreachableFragment(this, getFragment(this)) || link);
+      },
+    });
+    configuredFragmentSelection.add(component);
+    configured++;
+  }
+  return configured;
+}
