@@ -19,7 +19,7 @@ ARTIFACTS = Path(
 )
 CONSUMERS = [
     "statistics",
-    "csd",
+    "client-side-defense",
     "dns",
     "ddos",
     "webapp-api-protection",
@@ -125,7 +125,7 @@ class BrowserAcceptance(unittest.TestCase):
         self.visit("statistics")
         self.page.locator("#ph-XCSH_NAMESPACE").fill("reader-app")
         self.page.locator("#ph-XCSH_API_TOKEN").fill("SECRET_SENTINEL")
-        self.visit("csd")
+        self.visit("client-side-defense")
         assert self.page.locator("#ph-XCSH_NAMESPACE").input_value() == "reader-app"
         assert (
             self.page.locator("#ph-XCSH_API_TOKEN").input_value() == "SECRET_SENTINEL"
