@@ -28,7 +28,7 @@ test('all governed form consumer manifests select catalog fields', () => {
   for (const repo of [
     'certificate-management',
     'statistics',
-    'csd',
+    'client-side-defense',
     'dns',
     'ddos',
     'webapp-api-protection',
@@ -39,6 +39,7 @@ test('all governed form consumer manifests select catalog fields', () => {
     resolveManifest(manifest, catalog, aliases);
   }
 });
+
 import { createStore, substitute } from '../src/lib/personalization.mjs';
 
 test('Wingman fields retain independent identities, placeholders and literal shell values', () => {
