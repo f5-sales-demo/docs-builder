@@ -43,7 +43,6 @@ test('preserve legitimate publication and modified-header prose', () => {
 });
 
 test('retain complete meaningful grounded descriptions', () => {
-  const prose =
-    `Configure the policy before starting the task. ${'The warning and expected result remain necessary. '.repeat(20)}`;
+  const prose = `Configure the policy before starting the task. ${'The warning and expected result remain necessary. '.repeat(20)}`;
   assert.equal(corpusBrowserDescription(prose.trim(), 'Setup'), prose.trim());
 });
