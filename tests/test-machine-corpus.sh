@@ -130,7 +130,7 @@ sourceId: source-b
 title: Source B Reference
 category: Knowledge
 subcategory: API
-description: A singleton API reference.
+description: "Published April 5, 2023 | Last modified October 2, 2026 \u200BA singleton API reference."
 ---
 
 SOURCE_B_UNIQUE_BODY
@@ -186,7 +186,7 @@ manifest = {
     },
     "documents": documents,
     "assets": assets,
-    "refresh": {"artifact_sha256": "a" * 64, "preserved_descriptions": []},
+    "refresh": {"artifact_sha256": "a" * 64, "preserved_descriptions": ["content/source-b/reference/index.md"]},
     "aliases": [{"path": "content/source-a/old-guide/index.md",
         "target": "content/source-a/guide/index.md", "url": "https://source-a.example.invalid/old-guide"}],
 }
@@ -255,6 +255,8 @@ test -f "$OUTPUT_ONE/snapshot/content/source-b/reference/assets/b.svg"
 grep -Fq 'SOURCE_A_UNIQUE_BODY' "$OUTPUT_ONE/_llms-txt/source-a/guide.txt"
 grep -Fq 'SOURCE_A_INSTALL_BODY' "$OUTPUT_ONE/_llms-txt/source-a/install.txt"
 grep -Fq 'SOURCE_B_UNIQUE_BODY' "$OUTPUT_ONE/_llms-txt/source-b/reference.txt"
+grep -Fq 'Published April 5, 2023 | Last modified October 2, 2026' "$OUTPUT_ONE/_llms-txt/source-b/reference.txt"
+cmp "$CORPUS/content/source-b/reference/index.md" "$OUTPUT_ONE/snapshot/content/source-b/reference/index.md"
 if grep -Fq 'SOURCE_A_UNIQUE_BODY' "$OUTPUT_ONE/llms-full.txt"; then
   echo "ERROR: llms-full.txt must be a link-only inventory" >&2
   exit 1

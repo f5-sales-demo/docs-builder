@@ -1,6 +1,7 @@
 ---
 import { getProgressivePaths, loadProgressiveCorpus, findProgressiveNode } from '@f5-sales-demo/starlight-llms-txt/progressive-corpus';
 import path from 'node:path';
+import { corpusBrowserDescription } from '../scripts/corpus-browser-description.mjs';
 
 const contentRoot = process.env.MACHINE_CORPUS_DIR;
 if (!contentRoot) throw new Error('CorpusBrowser requires a verified Markdown snapshot');
@@ -21,7 +22,7 @@ const nodes = getProgressivePaths(corpus.root).map(({ path: route, type }) => {
   const node = findProgressiveNode(corpus.root, route);
   if (!node) throw new Error(`Missing corpus route: ${route}`);
   return {
-    route, type, title: node.meta.title, description: node.meta.description || '',
+    route, type, title: node.meta.title, description: corpusBrowserDescription(node.meta.description, node.meta.title),
     href: `${base}_llms-txt/${route}.txt`,
     children: node.type === 'directory' ? [...node.children.values()].map((child) => child.slug) : [],
   };
