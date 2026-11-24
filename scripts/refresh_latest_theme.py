@@ -14,13 +14,16 @@ import subprocess  # nosec B404
 import tarfile
 import urllib.parse
 import urllib.request
+from importlib import import_module
 from pathlib import Path
 from typing import Any
 
-try:
-    from scripts.astro_runtime_peers import lock_matches_source, resolve_markdown_pin
-except ModuleNotFoundError:
-    from astro_runtime_peers import lock_matches_source, resolve_markdown_pin
+# Support both an imported namespace module and direct CLI execution.
+_runtime_peers = import_module(
+    "scripts.astro_runtime_peers" if __package__ else "astro_runtime_peers"
+)
+lock_matches_source = _runtime_peers.lock_matches_source
+resolve_markdown_pin = _runtime_peers.resolve_markdown_pin
 
 THEME = "@f5-sales-demo/docs-theme"
 RELEASE = "https://api.github.com/repos/f5-sales-demo/docs-theme/releases/latest"
@@ -178,6 +181,7 @@ def main() -> None:
     headers = {"Accept": "application/vnd.github+json", "Cache-Control": "no-cache"}
     if os.environ.get("GH_TOKEN"):
         headers["Authorization"] = "Bearer " + os.environ["GH_TOKEN"]
+    # Fixed HTTPS GitHub publication endpoint.
     request = urllib.request.Request(RELEASE, headers=headers)
     # Fixed HTTPS GitHub publication endpoint.
     with urllib.request.urlopen(request, timeout=30) as response:  # nosec B310  # noqa: S310
