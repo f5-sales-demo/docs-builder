@@ -4,12 +4,18 @@ import base64
 import hashlib
 import io
 import json
+import subprocess
 import tarfile
 from pathlib import Path
 
 import pytest
 
-from scripts.refresh_latest_theme import THEME, refresh, selected_version
+from scripts.refresh_latest_theme import (
+    THEME,
+    refresh,
+    refresh_source_and_lock,
+    selected_version,
+)
 
 
 def publication(version: str, name: str = THEME):
@@ -123,3 +129,73 @@ def test_bad_evidence_cannot_mutate_source(tmp_path, change):
     assert before == {
         str(p): p.read_bytes() for p in tmp_path.rglob("*") if p.is_file()
     }
+
+
+@pytest.mark.parametrize("upgrade_peer", [False, True])
+def test_current_theme_resumes_failed_strict_lock_then_is_idempotent(
+    tmp_path, monkeypatch, upgrade_peer
+):
+    source(tmp_path)
+    release, metadata, archive = publication("1.0.0")
+    # Make the theme current while leaving the previous or missing lock.
+    refresh(tmp_path, release, metadata, archive)
+    path = tmp_path / "package.json"
+    original = json.loads(path.read_text())
+    original["dependencies"]["@astrojs/markdown-remark"] = "7.2.4"
+    path.write_text(json.dumps(original))
+    calls = []
+
+    def resolve(package, _theme, _npm):
+        if (
+            upgrade_peer
+            and package["dependencies"]["@astrojs/markdown-remark"] == "7.2.4"
+        ):
+            return "7.3.0"
+        return None
+
+    def install(args, **options):
+        calls.append((args, options))
+        if len(calls) == 1:
+            raise subprocess.CalledProcessError(1, args)
+        package = json.loads(path.read_text())
+        (tmp_path / "package-lock.json").write_text(
+            json.dumps(
+                {
+                    "packages": {
+                        "": package,
+                        "node_modules/@astrojs/markdown-remark": {
+                            "version": package["dependencies"][
+                                "@astrojs/markdown-remark"
+                            ]
+                        },
+                    }
+                }
+            )
+        )
+
+    monkeypatch.setattr("scripts.refresh_latest_theme.resolve_markdown_pin", resolve)
+    monkeypatch.setattr("scripts.refresh_latest_theme.subprocess.run", install)
+    with pytest.raises(subprocess.CalledProcessError):
+        refresh_source_and_lock(tmp_path, release, metadata, archive, "/npm")
+    after_failure = json.loads(path.read_text())
+    assert after_failure["version"] == ("3.2.2" if upgrade_peer else "3.2.1")
+    assert not refresh_source_and_lock(tmp_path, release, metadata, archive, "/npm")
+    before = {str(p): p.read_bytes() for p in tmp_path.rglob("*") if p.is_file()}
+    assert not refresh_source_and_lock(tmp_path, release, metadata, archive, "/npm")
+    assert before == {
+        str(p): p.read_bytes() for p in tmp_path.rglob("*") if p.is_file()
+    }
+    assert len(calls) == 2
+    assert all(
+        args
+        == [
+            "/npm",
+            "install",
+            "--package-lock-only",
+            "--ignore-scripts",
+            "--no-audit",
+            "--no-fund",
+        ]
+        and options == {"cwd": tmp_path, "check": True}
+        for args, options in calls
+    )
