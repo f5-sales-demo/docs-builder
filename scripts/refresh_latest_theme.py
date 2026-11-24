@@ -181,8 +181,10 @@ def main() -> None:
     headers = {"Accept": "application/vnd.github+json", "Cache-Control": "no-cache"}
     if os.environ.get("GH_TOKEN"):
         headers["Authorization"] = "Bearer " + os.environ["GH_TOKEN"]
-    # Fixed HTTPS GitHub publication endpoint.
-    request = urllib.request.Request(RELEASE, headers=headers)
+    # Fixed HTTPS endpoint; Ruff versions differ in their Request checks.
+    request = urllib.request.Request(  # noqa: S310, RUF100
+        RELEASE, headers=headers
+    )
     # Fixed HTTPS GitHub publication endpoint.
     with urllib.request.urlopen(request, timeout=30) as response:  # nosec B310  # noqa: S310
         release = json.load(response)
