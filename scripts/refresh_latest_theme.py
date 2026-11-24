@@ -8,12 +8,22 @@ import json
 import os
 import re
 import shutil
-import subprocess
+
+# Fixed argument-array npm interface.
+import subprocess  # nosec B404
 import tarfile
 import urllib.parse
 import urllib.request
+from importlib import import_module
 from pathlib import Path
 from typing import Any
+
+# Support both an imported namespace module and direct CLI execution.
+_runtime_peers = import_module(
+    "scripts.astro_runtime_peers" if __package__ else "astro_runtime_peers"
+)
+lock_matches_source = _runtime_peers.lock_matches_source
+resolve_markdown_pin = _runtime_peers.resolve_markdown_pin
 
 THEME = "@f5-sales-demo/docs-theme"
 RELEASE = "https://api.github.com/repos/f5-sales-demo/docs-theme/releases/latest"
@@ -124,6 +134,43 @@ def refresh(
     return True
 
 
+def refresh_source_and_lock(
+    root: Path,
+    release: dict[str, Any],
+    metadata: dict[str, Any],
+    archive: bytes,
+    npm: str,
+) -> bool:
+    """Resume peer and lock resolution even when verified theme bytes are current."""
+    package_path = root / "package.json"
+    package = json.loads(package_path.read_text())
+    markdown = resolve_markdown_pin(package, metadata, npm)
+    changed = refresh(root, release, metadata, archive)
+    if markdown is not None:
+        package = json.loads(package_path.read_text())
+        package["dependencies"]["@astrojs/markdown-remark"] = markdown
+        if not changed:
+            major, minor, patch = map(int, package["version"].split("."))
+            package["version"] = f"{major}.{minor}.{patch + 1}"
+        package_path.write_text(json.dumps(package, indent=2) + "\n")
+        changed = True
+    if changed or not lock_matches_source(root):
+        # Normal lock generation from verified local source.
+        subprocess.run(  # noqa: S603  # nosec B603
+            [
+                npm,
+                "install",
+                "--package-lock-only",
+                "--ignore-scripts",
+                "--no-audit",
+                "--no-fund",
+            ],
+            cwd=root,
+            check=True,
+        )
+    return changed
+
+
 def main() -> None:
     """Resolve current GitHub/npm publications, then regenerate the normal lockfile."""
     parser = argparse.ArgumentParser(description=__doc__)
@@ -134,14 +181,19 @@ def main() -> None:
     headers = {"Accept": "application/vnd.github+json", "Cache-Control": "no-cache"}
     if os.environ.get("GH_TOKEN"):
         headers["Authorization"] = "Bearer " + os.environ["GH_TOKEN"]
-    request = urllib.request.Request(RELEASE, headers=headers)  # noqa: S310 -- Fixed HTTPS GitHub publication endpoint.
-    with urllib.request.urlopen(request, timeout=30) as response:  # noqa: S310 -- Fixed HTTPS GitHub publication endpoint.
+    # Fixed HTTPS endpoint; Ruff versions differ in their Request checks.
+    request = urllib.request.Request(  # noqa: S310, RUF100
+        RELEASE, headers=headers
+    )
+    # Fixed HTTPS GitHub publication endpoint.
+    with urllib.request.urlopen(request, timeout=30) as response:  # nosec B310  # noqa: S310
         release = json.load(response)
     npm = shutil.which("npm")
     if npm is None:
         message = "npm executable is unavailable"
         raise ValueError(message)
-    result = subprocess.run(  # noqa: S603 -- Verified executable, fixed package and argument array.
+    # Verified executable, fixed package and argument array.
+    result = subprocess.run(  # noqa: S603  # nosec B603
         [npm, "view", THEME + "@latest", "--json"],
         check=True,
         capture_output=True,
@@ -157,22 +209,10 @@ def main() -> None:
         and parsed.path.startswith("/" + THEME + "/-/"),
         "Theme archive must come from the official npm package",
     )
-    with urllib.request.urlopen(url, timeout=60) as response:  # noqa: S310 -- Validated official npm HTTPS archive.
+    # Validated official npm HTTPS archive.
+    with urllib.request.urlopen(url, timeout=60) as response:  # nosec B310  # noqa: S310
         archive = response.read()
-    changed = refresh(args.root, release, metadata, archive)
-    if changed:
-        subprocess.run(  # noqa: S603 -- Normal lock generation from verified local source.
-            [
-                npm,
-                "install",
-                "--package-lock-only",
-                "--ignore-scripts",
-                "--no-audit",
-                "--no-fund",
-            ],
-            cwd=args.root,
-            check=True,
-        )
+    changed = refresh_source_and_lock(args.root, release, metadata, archive, npm)
     print(f"Latest theme {version}: {'refreshed' if changed else 'already current'}")
 
 
