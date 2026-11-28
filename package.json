@@ -1,7 +1,7 @@
 {
   "name": "docs-builder",
   "type": "module",
-  "version": "1.13.7",
+  "version": "1.13.8",
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",
@@ -22,7 +22,7 @@
     "@astrojs/markdown-remark": "7.3.10",
     "@astrojs/react": "^6.0.4",
     "@astrojs/starlight": "0.41.9",
-    "@f5-sales-demo/docs-theme": "file:vendor/npm/docs-theme-4.13.36.tgz",
+    "@f5-sales-demo/docs-theme": "file:vendor/npm/docs-theme-4.13.40.tgz",
     "@f5-sales-demo/icons-aws": "*",
     "@f5-sales-demo/icons-azure": "*",
     "@f5-sales-demo/icons-carbon": "*",
